@@ -32,6 +32,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# DEBUG: Log config values immediately after import
+logger.info(f"🔥 CONFIG LOADED:")
+logger.info(f"   LLM_PROVIDER = '{config.LLM_PROVIDER}'")
+logger.info(f"   OLLAMA_ENABLED = {config.OLLAMA_ENABLED}")
+logger.info(f"   DEFAULT_MODEL_KEY = {config.DEFAULT_MODEL_KEY}")
+logger.info(f"   DEVELOPMENT_MODE = {config.DEVELOPMENT_MODE}")
+
 WORLD_MONITOR_URL = "https://www.worldmonitor.app/"
 MAX_UPLOAD_FILES = 100
 MAX_UPLOAD_FILE_BYTES = 5 * 1024 * 1024
@@ -407,20 +414,51 @@ CORS(app)
 llm = LLMService()
 orchestrator = AIOrchestrator(llm)
 
-# Initialize RAG service with default knowledge base
+# Initialize RAG service with default knowledge base (skip if it takes too long)
 logger.info("🚀 Initializing RAG service...")
 rag = get_rag_service()
-if initialize_rag_with_defaults():
-    llm.enable_rag()
-    logger.info("✅ RAG service ready with knowledge base")
-else:
-    logger.warning("⚠️ RAG service not available; chat will work without retrieval augmentation")
+try:
+    import threading
+    import queue
+    
+    rag_initialized = queue.Queue()
+    
+    def init_rag_with_timeout():
+        try:
+            if initialize_rag_with_defaults():
+                llm.enable_rag()
+                rag_initialized.put(True)
+            else:
+                rag_initialized.put(False)
+        except Exception as e:
+            logger.warning(f"RAG init error: {e}")
+            rag_initialized.put(False)
+    
+    # Run RAG initialization in background thread with 10 second timeout
+    rag_thread = threading.Thread(target=init_rag_with_timeout, daemon=True)
+    rag_thread.start()
+    rag_thread.join(timeout=10)
+    
+    try:
+        success = rag_initialized.get_nowait()
+        if success:
+            logger.info("✅ RAG service ready with knowledge base")
+        else:
+            logger.warning("⚠️ RAG service initialization failed")
+    except queue.Empty:
+        logger.warning("⚠️ RAG initialization timed out (taking too long); continuing without it")
+        
+except Exception as e:
+    logger.warning(f"⚠️ RAG service not available: {e}")
 
-# Start background scheduler for RAG updates
+# Start background scheduler for RAG updates (in background thread)
 logger.info("🔄 Starting RAG update scheduler...")
-start_scheduler()
-scheduler_status = get_scheduler_status()
-logger.info(f"📊 Scheduler status: {scheduler_status}")
+try:
+    start_scheduler()
+    scheduler_status = get_scheduler_status()
+    logger.info(f"📊 Scheduler status: {scheduler_status}")
+except Exception as e:
+    logger.warning(f"⚠️ RAG scheduler error: {e}")
 
 logger.info("✅ Chatbot server starting...")
 logger.info(f"✅ Using Groq model: {config.GROQ_MODEL}")
@@ -513,6 +551,47 @@ def chat():
     except Exception as e:
         logger.error(f"Error in chat endpoint: {e}", exc_info=True)
         return jsonify({'error': 'Internal server error'}), 500
+
+
+@app.route('/api/debug/config', methods=['GET'])
+def debug_config():
+    """Debug endpoint to check Flask app configuration"""
+    return jsonify({
+        'LLM_PROVIDER': config.LLM_PROVIDER,
+        'OLLAMA_ENABLED': config.OLLAMA_ENABLED,
+        'OLLAMA_API_URL': config.OLLAMA_API_URL,
+        'OLLAMA_MODEL': config.OLLAMA_MODEL,
+        'DEFAULT_MODEL_KEY': config.DEFAULT_MODEL_KEY,
+        'DEVELOPMENT_MODE': config.DEVELOPMENT_MODE,
+    })
+
+
+@app.route('/api/test/ollama-direct', methods=['POST'])
+def test_ollama_direct():
+    """Test Ollama directly, bypassing orchestrator"""
+    from services.llm import generate_completion
+    
+    try:
+        data = request.json or {}
+        message = data.get('message', 'Hello')
+        
+        print(f"📍 TEST ENDPOINT: Calling generate_completion directly", flush=True)
+        messages = [{"role": "user", "content": message}]
+        response = generate_completion(messages)
+        print(f"📍 TEST ENDPOINT: Got response: {response[:100]}", flush=True)
+        
+        return jsonify({
+            'success': True,
+            'response': response,
+            'provider': config.LLM_PROVIDER,
+        })
+    except Exception as e:
+        print(f"📍 TEST ENDPOINT: EXCEPTION: {e}", flush=True)
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'provider': config.LLM_PROVIDER,
+        }), 500
 
 
 @app.route('/api/orchestrator/query', methods=['POST'])
@@ -1913,20 +1992,34 @@ def _validate_api_configuration():
     Logs warnings if critical APIs are not configured.
     """
     logger.info("🔍 Validating API configuration...")
+    logger.info(f"📋 LLM_PROVIDER: {config.LLM_PROVIDER}")
     
     issues = []
     
-    # Check Groq
-    if not config.GROQ_API_KEY:
-        issues.append("❌ GROQ_API_KEY not set - LLM responses will fail")
-    elif config.GROQ_API_KEY.startswith("your_") or len(config.GROQ_API_KEY) < 20:
-        issues.append("⚠️  GROQ_API_KEY looks invalid or placeholder")
+    # Check if running in OLLAMA-ONLY mode
+    if config.LLM_PROVIDER == 'ollama_only':
+        logger.info("✅ OLLAMA-ONLY MODE - Groq API not required")
+        if config.OLLAMA_ENABLED:
+            logger.info(f"✅ Ollama enabled at {config.OLLAMA_API_URL} with model: {config.OLLAMA_MODEL}")
+        else:
+            issues.append("❌ OLLAMA_ENABLED=False but LLM_PROVIDER=ollama_only")
+    elif config.LLM_PROVIDER == 'deepseek_local':
+        logger.info("✅ DEEPSEEK-LOCAL MODE - no external API keys required")
+        logger.info(f"   Model         : {config.DEEPSEEK_MODEL_NAME}")
+        logger.info(f"   Max new tokens: {config.DEEPSEEK_MAX_NEW_TOKENS}")
+        logger.info(f"   Temperature   : {config.DEEPSEEK_TEMPERATURE}")
     else:
-        logger.info("✅ GROQ_API_KEY configured")
-    
-    # Check Ollama as fallback
-    if not config.OLLAMA_ENABLED:
-        logger.info("ℹ️  Ollama disabled - will rely on Groq/OpenAI")
+        # Standard mode - check Groq
+        if not config.GROQ_API_KEY:
+            issues.append("❌ GROQ_API_KEY not set - LLM responses will fail")
+        elif config.GROQ_API_KEY.startswith("your_") or len(config.GROQ_API_KEY) < 20:
+            issues.append("⚠️  GROQ_API_KEY looks invalid or placeholder")
+        else:
+            logger.info("✅ GROQ_API_KEY configured")
+        
+        # Check Ollama as fallback
+        if not config.OLLAMA_ENABLED:
+            logger.info("ℹ️  Ollama disabled - will rely on Groq/OpenAI")
     
     # Check OpenAI as fallback
     if not config.OPENAI_API_KEY:

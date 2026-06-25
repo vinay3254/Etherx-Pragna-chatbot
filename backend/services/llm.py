@@ -99,6 +99,35 @@ def _call_ollama_direct(messages: List[Dict[str, str]]) -> str:
         )
 
 
+def _call_deepseek_local(messages: List[Dict[str, str]]) -> str:
+    """
+    Route inference to the local DeepSeek-R1-Distill-Qwen-1.5B model.
+
+    Delegates entirely to services.model_service which manages the singleton
+    HuggingFace model instance.  This function is intentionally thin so that
+    all model-specific logic stays in model_service.py.
+
+    Args:
+        messages: OpenAI-style chat message list (role/content dicts).
+
+    Returns:
+        Generated response string (chain-of-thought blocks already stripped).
+
+    Raises:
+        RuntimeError: Propagated from model_service if the model failed to
+                      load or inference threw an exception.
+    """
+    logger.info("🤖 DeepSeek local provider selected — routing to model_service")
+    try:
+        from services.model_service import get_model_service
+        service = get_model_service()
+        return service.generate_response(messages)
+    except RuntimeError:
+        raise   # Already formatted with a clear error message — re-raise as-is
+    except Exception as exc:
+        raise RuntimeError(f"❌ DeepSeek local inference failed: {exc}") from exc
+
+
 def _normalize_key(model_key: str) -> str:
     return (model_key or "").strip().lower()
 
@@ -249,7 +278,10 @@ def generate_completion(
     
     # =========== OLLAMA-ONLY MODE ===========
     # If LLM_PROVIDER == 'ollama_only', skip all fallback logic
+    logger.info("generate_completion() called: LLM_PROVIDER='%s', model_override=%s", config.LLM_PROVIDER, model_override)
+    
     if config.LLM_PROVIDER == 'ollama_only':
+        logger.info("OLLAMA-ONLY MODE: URL=%s, Model=%s", config.OLLAMA_API_URL, config.OLLAMA_MODEL)
         logger.info("=" * 80)
         logger.info("🚀 OLLAMA-ONLY MODE ACTIVATED")
         logger.info(f"   URL: {config.OLLAMA_API_URL}")
@@ -268,9 +300,34 @@ def generate_completion(
             error_msg = f"❌ OLLAMA ERROR: {str(e)}"
             logger.error(error_msg)
             return error_msg
-    
+
+    # =========== DEEPSEEK LOCAL MODE (HuggingFace Transformers) ===========
+    # No API keys, no network calls, no fallbacks — pure local inference.
+    # The model singleton is loaded once at startup via services/model_service.py.
+    if config.LLM_PROVIDER == 'deepseek_local':
+        logger.info("DEEPSEEK LOCAL MODE: model=%s, max_tokens=%d", config.DEEPSEEK_MODEL_NAME, config.DEEPSEEK_MAX_NEW_TOKENS)
+        logger.info("=" * 80)
+        logger.info("🤖 DEEPSEEK LOCAL MODE")
+        logger.info(f"   Model         : {config.DEEPSEEK_MODEL_NAME}")
+        logger.info(f"   Max new tokens: {config.DEEPSEEK_MAX_NEW_TOKENS}")
+        logger.info(f"   Temperature   : {config.DEEPSEEK_TEMPERATURE}")
+        logger.info(f"   Do sample     : {config.DEEPSEEK_DO_SAMPLE}")
+        logger.info("=" * 80)
+
+        try:
+            result = _call_deepseek_local(messages)
+            logger.info("✅ DeepSeek local response: %d chars", len(result))
+            return result
+        except RuntimeError as e:
+            error_msg = str(e)
+            logger.error("🔴 DEEPSEEK LOCAL FAILED: %s", error_msg)
+            return error_msg
+        except Exception as e:
+            error_msg = f"❌ DEEPSEEK ERROR: {str(e)}"
+            logger.error(error_msg)
+            return error_msg
+
     # =========== STANDARD MODE (with fallbacks) ===========
-    import sys
     
     # Log API key configuration at START
     logger.info("=" * 80)

@@ -52,7 +52,16 @@ class LLMService:
         # Chat mode
         self.current_mode = "general"
         
-        if not self.api_key:
+        # In ollama_only or deepseek_local mode, Groq API key is not required
+        if config.LLM_PROVIDER == 'ollama_only':
+            logger.info(f"✅ LLM Service initialized in OLLAMA-ONLY MODE")
+            logger.info(f"   Ollama Model: {config.OLLAMA_MODEL}")
+            logger.info(f"   Ollama URL: {config.OLLAMA_API_URL}")
+        elif config.LLM_PROVIDER == 'deepseek_local':
+            logger.info("✅ LLM Service initialized in DEEPSEEK-LOCAL MODE")
+            logger.info(f"   Model : {config.DEEPSEEK_MODEL_NAME}")
+            logger.info(f"   Device: auto-detect (CPU → GPU when available)")
+        elif not self.api_key:
             logger.warning("⚠️ GROQ_API_KEY not set - LLM service will not work")
         else:
             logger.info(f"✅ LLM Service initialized with model: {self.model}")
@@ -194,8 +203,10 @@ class LLMService:
         Returns:
             Tuple of (AI response string, list of search sources)
         """
-        if not self.api_key and not self._can_run_without_groq(model_override):
-            return "Sorry, the AI service is not configured. Please set GROQ_API_KEY.", []
+        # In OLLAMA_ONLY or DEEPSEEK_LOCAL mode, skip Groq API key check
+        if config.LLM_PROVIDER not in ('ollama_only', 'deepseek_local'):
+            if not self.api_key and not self._can_run_without_groq(model_override):
+                return "Sorry, the AI service is not configured. Please set GROQ_API_KEY.", []
 
         try:
             intent_result = classify_query(message, model_override=model_override)
@@ -309,6 +320,8 @@ class LLMService:
             style_msg = style_profile.style_system_message(style, language, chat_mode)
             prompt_messages.insert(0, {"role": "system", "content": style_msg})
             
+            logger.info("Calling generate_completion: model_override=%s, fallback_models=%s", model_override, fallback_models)
+            
             ai_response = generate_completion(
                 prompt_messages,
                 model_override=model_override,
@@ -316,6 +329,8 @@ class LLMService:
                 language=language,
                 chat_mode=chat_mode,
             )
+            
+            logger.info("AI response received: %s...", ai_response[:100])
 
             # Store in cache if cacheable
             if is_cacheable and cache_key:
@@ -345,9 +360,11 @@ class LLMService:
         Get streaming AI response for a user message
         Yields chunks of text
         """
-        if not self.api_key and not self._can_run_without_groq(model_override):
-            yield json.dumps({"error": "Service not configured"})
-            return
+        # In OLLAMA_ONLY or DEEPSEEK_LOCAL mode, skip Groq API key check
+        if config.LLM_PROVIDER not in ('ollama_only', 'deepseek_local'):
+            if not self.api_key and not self._can_run_without_groq(model_override):
+                yield json.dumps({"error": "Service not configured"})
+                return
 
         try:
             response_text, sources = self.get_response(
@@ -376,7 +393,10 @@ class LLMService:
 
     @staticmethod
     def _can_run_without_groq(model_override: Optional[str]) -> bool:
-        """Allow local-only operation when Ollama is explicitly selected."""
+        """Allow local-only operation when Ollama or DeepSeek local is selected."""
+        # DeepSeek local mode never needs a Groq key
+        if config.LLM_PROVIDER == 'deepseek_local':
+            return True
         if not model_override:
             return False
         return model_override.strip().lower().startswith("ollama:") and config.OLLAMA_ENABLED

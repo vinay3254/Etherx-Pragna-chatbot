@@ -39,8 +39,8 @@ if not _has_valid_api and not DEVELOPMENT_MODE:
     logging.error('   Set DEVELOPMENT_MODE=True only for testing')
 
 # LLM Provider Selection
-LLM_PROVIDER = os.getenv('LLM_PROVIDER', 'standard')  # 'ollama_only' or 'standard'
-if LLM_PROVIDER not in ['ollama_only', 'standard']:
+LLM_PROVIDER = os.getenv('LLM_PROVIDER', 'standard')  # 'ollama_only', 'standard', or 'deepseek_local'
+if LLM_PROVIDER not in ['ollama_only', 'standard', 'deepseek_local']:
     LLM_PROVIDER = 'standard'
 
 # Ollama Configuration (Local Open Models)
@@ -48,6 +48,36 @@ OLLAMA_ENABLED = os.getenv('OLLAMA_ENABLED', 'True').lower() == 'true'
 OLLAMA_API_URL = os.getenv('OLLAMA_API_URL', 'http://localhost:11434')
 OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'mistral')
 OLLAMA_TIMEOUT = int(os.getenv('OLLAMA_TIMEOUT', 120))
+
+# ── DeepSeek Local (HuggingFace Transformers) ──────────────────────────────
+# Used when LLM_PROVIDER = 'deepseek_local'.  The model is downloaded once
+# from HuggingFace Hub and cached at ~/.cache/huggingface/.
+#
+# CPU baseline (Intel i7-1065G7, 16 GB RAM):
+#   - Load time  : 60–120 s on first run (model download), ~30 s from cache
+#   - Inference  : 30–120 s per response at max_new_tokens=384
+#   - RAM usage  : ~6 GB (float32)
+#
+# GPU upgrade (NVIDIA, no code changes needed):
+#   - Device auto-detected, dtype switches to float16
+#   - Inference  : 2–10 s per response
+#   - VRAM usage : ~3 GB (float16)
+#
+DEEPSEEK_MODEL_NAME = os.getenv(
+    'DEEPSEEK_MODEL_NAME',
+    'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
+)
+DEEPSEEK_MAX_NEW_TOKENS = int(os.getenv('DEEPSEEK_MAX_NEW_TOKENS', 384))
+DEEPSEEK_TEMPERATURE = float(os.getenv('DEEPSEEK_TEMPERATURE', 0.7))
+DEEPSEEK_DO_SAMPLE = os.getenv('DEEPSEEK_DO_SAMPLE', 'True').lower() == 'true'
+
+# Log DeepSeek mode at startup
+if LLM_PROVIDER == 'deepseek_local':
+    import logging as _logging
+    _logging.getLogger(__name__).info(
+        '✅ DEEPSEEK LOCAL MODE: %s | max_new_tokens=%d | device=auto-detect',
+        DEEPSEEK_MODEL_NAME, DEEPSEEK_MAX_NEW_TOKENS
+    )
 
 # Log mode at startup
 if LLM_PROVIDER == 'ollama_only':
@@ -195,6 +225,16 @@ MODEL_REGISTRY = {
         'open_weights': True,
         'quality_tier': 'high',
         'speed_tier': 'medium',
+        'cost_tier': 'local',
+    },
+    # ── DeepSeek local (HuggingFace Transformers) ────────────────────────
+    'deepseek:deepseek-r1-distill-qwen-1.5b': {
+        'provider': 'deepseek_local',
+        'model': 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B',
+        'display_name': 'DeepSeek R1 Distill Qwen 1.5B (Local — HuggingFace)',
+        'open_weights': True,
+        'quality_tier': 'good',
+        'speed_tier': 'low',       # Honest: slow on CPU; fast on GPU
         'cost_tier': 'local',
     },
 }
