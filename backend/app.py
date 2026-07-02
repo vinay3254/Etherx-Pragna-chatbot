@@ -297,9 +297,9 @@ def _build_image_generation_prompt(user_prompt: str, style: str, quality: str) -
     style_hint = style_map.get(style, style_map['cinematic'])
     detail_hint = 'ultra detailed' if quality == 'hd' else 'high quality'
     return (
-        f"{user_prompt.strip()}\n\n"
-        f"Render style guidance: {style_hint}.\n"
-        f"Quality target: {detail_hint}.\n"
+        f"{user_prompt.strip()}. "
+        f"Render style guidance: {style_hint}. "
+        f"Quality target: {detail_hint}. "
         "Requirements: keep subject accurate to prompt, avoid unwanted text artifacts, maintain coherent anatomy and perspective."
     )
 
