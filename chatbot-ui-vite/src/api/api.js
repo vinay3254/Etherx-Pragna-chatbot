@@ -228,10 +228,43 @@ export const generateAIImage = async ({ prompt, style = "cinematic", quality = "
 
 // ── Pragna Code Agent ────────────────────────────────────────────────────────
 
+const _authHeaders = () => {
+  const token = localStorage.getItem('authToken');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+async function _consumeSSE(response, onEvent) {
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    onEvent({ type: 'error', content: err.error || `HTTP ${response.status}` });
+    return;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop(); // keep incomplete line
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        try {
+          const event = JSON.parse(line.slice(6));
+          onEvent(event);
+        } catch (_) {}
+      }
+    }
+  }
+}
+
 /**
  * Run the agentic loop with streaming SSE.
  * onEvent(event) is called for each parsed SSE event:
- *   { type: 'thought'|'tool_call'|'tool_result'|'done'|'error', content, tool?, args? }
+ *   { type: 'thought'|'tool_call'|'tool_result'|'confirm_required'|'done'|'error', content, tool?, args?, session_id?, preview? }
  * Returns a controller with .abort() to cancel.
  */
 export const runAgentStream = ({ task, mode = 'general', contextFiles = [], workingDir = null, onEvent }) => {
@@ -241,36 +274,37 @@ export const runAgentStream = ({ task, mode = 'general', contextFiles = [], work
     try {
       const response = await fetch('/api/agent/run', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ..._authHeaders() },
         body: JSON.stringify({ task, mode, context_files: contextFiles, working_dir: workingDir }),
         signal: controller.signal,
       });
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        onEvent({ type: 'error', content: err.error || `HTTP ${response.status}` });
-        return;
+      await _consumeSSE(response, onEvent);
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        onEvent({ type: 'error', content: err.message });
       }
+    }
+  })();
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+  return controller;
+};
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop(); // keep incomplete line
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const event = JSON.parse(line.slice(6));
-              onEvent(event);
-            } catch (_) {}
-          }
-        }
-      }
+/**
+ * Resume a paused agent session after the user approves or rejects a
+ * mutating tool call. Same event shape and controller as runAgentStream.
+ */
+export const resumeAgentStream = ({ sessionId, decision, onEvent }) => {
+  const controller = new AbortController();
+
+  (async () => {
+    try {
+      const response = await fetch('/api/agent/resume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ..._authHeaders() },
+        body: JSON.stringify({ session_id: sessionId, decision }),
+        signal: controller.signal,
+      });
+      await _consumeSSE(response, onEvent);
     } catch (err) {
       if (err.name !== 'AbortError') {
         onEvent({ type: 'error', content: err.message });
@@ -287,7 +321,7 @@ export const runAgentStream = ({ task, mode = 'general', contextFiles = [], work
 export const agentChat = async ({ task, mode = 'general', history = [] }) => {
   const response = await fetch('/api/agent/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ..._authHeaders() },
     body: JSON.stringify({ task, mode, history }),
   });
   const data = await response.json();
@@ -299,7 +333,7 @@ export const agentChat = async ({ task, mode = 'general', history = [] }) => {
  * Get available agent modes from the backend.
  */
 export const getAgentModes = async () => {
-  const response = await fetch('/api/agent/modes');
+  const response = await fetch('/api/agent/modes', { headers: _authHeaders() });
   const data = await response.json();
   return data.modes || [];
 };
