@@ -64,4 +64,4 @@ The agent can call the following tools directly without asking for confirmation:
 6. `search_code(pattern, path, file_pattern)` (recursive grep/findstr)
 7. `run_command(command, cwd)` (for tests, installs, script execution)
 
-> 🛡️ **Safety Guard:** Dangerous commands (e.g., `rm -rf`, `drop database`, force pushes) are automatically blocked.
+> 🛡️ **Safety Guard:** Before `write_file`, `create_file`, `append_file`, or `run_command` runs, Pragna Code shows you a diff (or the exact command) and asks `Approve this action? [y/N]` — nothing mutates your files or runs a shell command without your say-so. A small blocklist (`rm -rf`, `drop database`, force pushes, etc.) is also enforced as a second layer for `run_command`.
