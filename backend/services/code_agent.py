@@ -182,10 +182,23 @@ Available tools:
 
 # ─── Tool execution ──────────────────────────────────────────────────────────
 
-def _safe_path(path: str) -> Path:
-    """Resolve path, keeping it within reasonable bounds."""
-    p = Path(path).expanduser()
-    return p
+# Default sandbox root when no working_dir is supplied: the repo root
+# (backend/services/code_agent.py -> backend/services -> backend -> repo root).
+DEFAULT_ROOT = Path(__file__).resolve().parent.parent.parent
+
+
+def _resolve_in_root(root: Path, path: str) -> Path:
+    """Resolve `path` against `root`, rejecting anything that escapes it."""
+    candidate = Path(path).expanduser()
+    if not candidate.is_absolute():
+        candidate = root / candidate
+    resolved = candidate.resolve()
+    root_resolved = root.resolve()
+    if resolved != root_resolved and root_resolved not in resolved.parents:
+        raise ValueError(
+            f"Path '{path}' resolves outside the allowed working directory ({root_resolved})"
+        )
+    return resolved
 
 
 def _is_blocked_command(cmd: str) -> bool:
@@ -195,9 +208,12 @@ def _is_blocked_command(cmd: str) -> bool:
     return False
 
 
-def tool_read_file(path: str) -> str:
+def tool_read_file(root: Path, path: str) -> str:
     try:
-        p = _safe_path(path)
+        p = _resolve_in_root(root, path)
+    except ValueError as e:
+        return f"ERROR: {e}"
+    try:
         if not p.exists():
             return f"ERROR: File not found: {path}"
         if p.stat().st_size > MAX_READ_BYTES:
@@ -210,9 +226,12 @@ def tool_read_file(path: str) -> str:
         return f"ERROR reading file: {e}"
 
 
-def tool_write_file(path: str, content: str) -> str:
+def tool_write_file(root: Path, path: str, content: str) -> str:
     try:
-        p = _safe_path(path)
+        p = _resolve_in_root(root, path)
+    except ValueError as e:
+        return f"ERROR: {e}"
+    try:
         p.parent.mkdir(parents=True, exist_ok=True)
         with open(p, "w", encoding="utf-8") as f:
             f.write(content)
@@ -221,9 +240,12 @@ def tool_write_file(path: str, content: str) -> str:
         return f"ERROR writing file: {e}"
 
 
-def tool_create_file(path: str, content: str) -> str:
+def tool_create_file(root: Path, path: str, content: str) -> str:
     try:
-        p = _safe_path(path)
+        p = _resolve_in_root(root, path)
+    except ValueError as e:
+        return f"ERROR: {e}"
+    try:
         if p.exists():
             return f"ERROR: File already exists: {path}. Use write_file to overwrite."
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -234,9 +256,12 @@ def tool_create_file(path: str, content: str) -> str:
         return f"ERROR creating file: {e}"
 
 
-def tool_list_dir(path: str) -> str:
+def tool_list_dir(root: Path, path: str) -> str:
     try:
-        p = _safe_path(path)
+        p = _resolve_in_root(root, path)
+    except ValueError as e:
+        return f"ERROR: {e}"
+    try:
         if not p.exists():
             return f"ERROR: Path not found: {path}"
         if not p.is_dir():
@@ -255,11 +280,14 @@ def tool_list_dir(path: str) -> str:
         return f"ERROR listing dir: {e}"
 
 
-def tool_run_command(command: str, cwd: str = None) -> str:
+def tool_run_command(root: Path, command: str, cwd: str = None) -> str:
     if _is_blocked_command(command):
         return f"ERROR: Blocked command — this command pattern is not allowed for safety: {command}"
     try:
-        cwd_path = _safe_path(cwd) if cwd else None
+        cwd_path = _resolve_in_root(root, cwd) if cwd else root
+    except ValueError as e:
+        return f"ERROR: {e}"
+    try:
         result = subprocess.run(
             command,
             shell=True,
@@ -284,11 +312,13 @@ def tool_run_command(command: str, cwd: str = None) -> str:
         return f"ERROR running command: {e}"
 
 
-def tool_search_code(pattern: str, path: str = ".", file_pattern: str = None) -> str:
+def tool_search_code(root: Path, pattern: str, path: str = ".", file_pattern: str = None) -> str:
     try:
-        p = _safe_path(path)
+        p = _resolve_in_root(root, path)
+    except ValueError as e:
+        return f"ERROR: {e}"
+    try:
         cmd = ["grep", "-rn", "--include", file_pattern or "*", pattern, str(p)]
-        # On Windows use findstr as fallback
         if os.name == "nt":
             if file_pattern:
                 cmd = f'findstr /s /n /r "{pattern}" "{p}\\{file_pattern}"'
@@ -306,9 +336,12 @@ def tool_search_code(pattern: str, path: str = ".", file_pattern: str = None) ->
         return f"ERROR searching: {e}"
 
 
-def tool_append_file(path: str, content: str) -> str:
+def tool_append_file(root: Path, path: str, content: str) -> str:
     try:
-        p = _safe_path(path)
+        p = _resolve_in_root(root, path)
+    except ValueError as e:
+        return f"ERROR: {e}"
+    try:
         with open(p, "a", encoding="utf-8") as f:
             f.write(content)
         return f"OK: Appended {len(content)} chars to {path}"
@@ -316,27 +349,28 @@ def tool_append_file(path: str, content: str) -> str:
         return f"ERROR appending to file: {e}"
 
 
-def dispatch_tool(tool_name: str, args: dict) -> str:
+def dispatch_tool(tool_name: str, args: dict, root: Path) -> str:
     """Route a tool call to the right function."""
     try:
         if tool_name == "read_file":
-            return tool_read_file(args.get("path", ""))
+            return tool_read_file(root, args.get("path", ""))
         elif tool_name == "write_file":
-            return tool_write_file(args.get("path", ""), args.get("content", ""))
+            return tool_write_file(root, args.get("path", ""), args.get("content", ""))
         elif tool_name == "create_file":
-            return tool_create_file(args.get("path", ""), args.get("content", ""))
+            return tool_create_file(root, args.get("path", ""), args.get("content", ""))
         elif tool_name == "list_dir":
-            return tool_list_dir(args.get("path", "."))
+            return tool_list_dir(root, args.get("path", "."))
         elif tool_name == "run_command":
-            return tool_run_command(args.get("command", ""), args.get("cwd"))
+            return tool_run_command(root, args.get("command", ""), args.get("cwd"))
         elif tool_name == "search_code":
             return tool_search_code(
+                root,
                 args.get("pattern", ""),
                 args.get("path", "."),
                 args.get("file_pattern"),
             )
         elif tool_name == "append_file":
-            return tool_append_file(args.get("path", ""), args.get("content", ""))
+            return tool_append_file(root, args.get("path", ""), args.get("content", ""))
         else:
             return f"ERROR: Unknown tool '{tool_name}'"
     except Exception as e:
