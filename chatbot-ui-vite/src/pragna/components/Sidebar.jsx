@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useContext } from 'react'
+import { Folder, FolderPlus, MoreVertical, Edit2, Trash2 } from 'lucide-react'
 import pragnaLogo from '../../assets/pragna-logo-full.png'
 import ChatManagementAPI from '../../api/chatManagement'
 import RecentItem from './RecentItem'
@@ -18,7 +19,7 @@ const Sidebar = ({
   onClose,
   onOpenSettings,
 }) => {
-  const { language, setLanguage } = useContext(ChatContext)
+  const { language, setLanguage, folders, createFolder, renameFolder, deleteFolder, moveChatToFolder } = useContext(ChatContext)
 
   const [pinnedChats, setPinnedChats] = useState(new Set())
   const [renameDialogId, setRenameDialogId] = useState(null)
@@ -26,6 +27,11 @@ const Sidebar = ({
   const [loading, setLoading] = useState(null)
   const [error, setError] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [newFolderDialogOpen, setNewFolderDialogOpen] = useState(false)
+  const [newFolderName, setNewFolderName] = useState('')
+  const [folderMenuOpenId, setFolderMenuOpenId] = useState(null)
+  const [folderRenameId, setFolderRenameId] = useState(null)
+  const [folderRenameName, setFolderRenameName] = useState('')
 
   // Menu popup states
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -286,6 +292,8 @@ const Sidebar = ({
     (chat.title || 'New chat').toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const unfiledChats = filteredChats.filter((chat) => !chat.folderId)
+
   return (
     <aside style={{ width: '288px', flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'rgba(20,20,20,0.82)', borderRight: '1px solid #2d2a24', backdropFilter: 'blur(8px)', height: '100%' }}>
       
@@ -392,17 +400,15 @@ const Sidebar = ({
           />
         </div>
 
-        <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: '#a89878', padding: '0 14px 10px 14px' }}>
-          RECENTS
-        </div>
-
-        {renameDialogId ? (
-          <div style={{ padding: '6px 14px' }}>
+        {/* New Folder */}
+        <div style={{ padding: '0 10px 8px 10px' }}>
+          {newFolderDialogOpen ? (
             <input
               autoFocus
               type="text"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              placeholder="Folder name"
               style={{
                 width: '100%',
                 padding: '6px 10px',
@@ -413,44 +419,258 @@ const Sidebar = ({
                 color: '#f0e6d3',
               }}
               onBlur={() => {
-                if (newTitle) handleRenameConfirm(renameDialogId)
-                setRenameDialogId(null)
+                if (newFolderName.trim()) createFolder(newFolderName)
+                setNewFolderName('')
+                setNewFolderDialogOpen(false)
               }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && newTitle) {
-                  handleRenameConfirm(renameDialogId)
-                  setRenameDialogId(null)
+                if (e.key === 'Enter' && newFolderName.trim()) {
+                  createFolder(newFolderName)
+                  setNewFolderName('')
+                  setNewFolderDialogOpen(false)
                 } else if (e.key === 'Escape') {
-                  setRenameDialogId(null)
+                  setNewFolderName('')
+                  setNewFolderDialogOpen(false)
                 }
               }}
             />
-          </div>
-        ) : null}
+          ) : (
+            <button
+              type="button"
+              onClick={() => setNewFolderDialogOpen(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '7px 10px',
+                borderRadius: '8px',
+                border: 'none',
+                background: 'transparent',
+                color: '#a89878',
+                fontSize: '12.5px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                width: '100%',
+                textAlign: 'left',
+              }}
+              className="hover:bg-[#1a1a1a] hover:text-[#e5c76b]"
+            >
+              <FolderPlus size={14} />
+              <span>New Folder</span>
+            </button>
+          )}
+        </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-          {filteredChats.map((chat) => (
-            renameDialogId === chat.id ? null : (
-              <RecentItem
-                key={chat.id}
-                id={chat.id}
-                title={chat.title || 'New chat'}
-                active={chat.id === activeChatId}
-                isPinned={pinnedChats.has(chat.id)}
-                onClick={() => {
-                  onSelectRecent(chat.id)
-                  handleChangeView('chats')
+        {/* Folder sections */}
+        {folders.map((folder) => {
+          const folderChats = filteredChats.filter((c) => c.folderId === folder.id)
+          return (
+            <div
+              key={folder.id}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault()
+                const chatId = e.dataTransfer.getData('text/plain')
+                if (chatId) moveChatToFolder(chatId, folder.id)
+              }}
+              style={{ marginBottom: '6px' }}
+            >
+              {folderRenameId === folder.id ? (
+                <div style={{ padding: '6px 14px' }}>
+                  <input
+                    autoFocus
+                    type="text"
+                    value={folderRenameName}
+                    onChange={(e) => setFolderRenameName(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #2d2a24',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      background: '#1a1a1a',
+                      color: '#f0e6d3',
+                    }}
+                    onBlur={() => {
+                      if (folderRenameName.trim()) renameFolder(folder.id, folderRenameName)
+                      setFolderRenameId(null)
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && folderRenameName.trim()) {
+                        renameFolder(folder.id, folderRenameName)
+                        setFolderRenameId(null)
+                      } else if (e.key === 'Escape') {
+                        setFolderRenameId(null)
+                      }
+                    }}
+                  />
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 14px', position: 'relative' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '11.5px', fontWeight: 700, letterSpacing: '1px', color: '#a89878' }}>
+                    <Folder size={13} />
+                    <span>{folder.name.toUpperCase()}</span>
+                    <span style={{ color: '#6b6152' }}>({folderChats.length})</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFolderMenuOpenId(folderMenuOpenId === folder.id ? null : folder.id)}
+                    style={{ padding: '2px', borderRadius: '4px', border: 'none', background: 'transparent', color: '#a89878', cursor: 'pointer', display: 'flex' }}
+                    aria-label={`Menu for ${folder.name}`}
+                  >
+                    <MoreVertical size={13} />
+                  </button>
+                  {folderMenuOpenId === folder.id && (
+                    <>
+                      <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setFolderMenuOpenId(null)} />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          right: '8px',
+                          top: 'calc(100% + 2px)',
+                          width: '150px',
+                          zIndex: 100,
+                          padding: '4px',
+                          borderRadius: '10px',
+                          background: '#141414',
+                          border: '1px solid rgba(212,175,55,0.22)',
+                          boxShadow: '0 10px 24px rgba(0,0,0,0.5)',
+                        }}
+                      >
+                        <button
+                          onClick={() => {
+                            setFolderRenameId(folder.id)
+                            setFolderRenameName(folder.name)
+                            setFolderMenuOpenId(null)
+                          }}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '7px', border: 'none', background: 'transparent', color: '#d8cbb0', fontSize: '13px', cursor: 'pointer', textAlign: 'left' }}
+                          className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+                        >
+                          <Edit2 size={14} />
+                          <span>Rename</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Delete folder "${folder.name}"? Chats inside will be moved back to Recents.`)) {
+                              deleteFolder(folder.id)
+                            }
+                            setFolderMenuOpenId(null)
+                          }}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '7px', border: 'none', background: 'transparent', color: '#d98b7f', fontSize: '13px', cursor: 'pointer', textAlign: 'left' }}
+                          className="hover:bg-[#301614]"
+                        >
+                          <Trash2 size={14} />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                {folderChats.map((chat) => (
+                  renameDialogId === chat.id ? null : (
+                    <RecentItem
+                      key={chat.id}
+                      id={chat.id}
+                      title={chat.title || 'New chat'}
+                      active={chat.id === activeChatId}
+                      isPinned={pinnedChats.has(chat.id)}
+                      folders={folders}
+                      currentFolderId={chat.folderId || null}
+                      onMoveToFolder={(folderId) => moveChatToFolder(chat.id, folderId)}
+                      onClick={() => {
+                        onSelectRecent(chat.id)
+                        handleChangeView('chats')
+                      }}
+                      onDelete={() => handleDelete(chat.id)}
+                      onRename={() => handleRename(chat.id, chat.title || 'New chat')}
+                      onShare={() => handleShare(chat.id)}
+                      onExport={() => handleExport(chat.id)}
+                      onPinChat={() => handlePinChat(chat.id)}
+                      onArchive={() => handleArchive(chat.id)}
+                      onStartGroupChat={() => handleStartGroupChat(chat.id)}
+                    />
+                  )
+                ))}
+              </div>
+            </div>
+          )
+        })}
+
+        {/* Unfiled chats */}
+        <div
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault()
+            const chatId = e.dataTransfer.getData('text/plain')
+            if (chatId) moveChatToFolder(chatId, null)
+          }}
+        >
+          <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: '#a89878', padding: '0 14px 10px 14px' }}>
+            RECENTS
+          </div>
+
+          {renameDialogId ? (
+            <div style={{ padding: '6px 14px' }}>
+              <input
+                autoFocus
+                type="text"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '6px 10px',
+                  border: '1px solid #2d2a24',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  background: '#1a1a1a',
+                  color: '#f0e6d3',
                 }}
-                onDelete={() => handleDelete(chat.id)}
-                onRename={() => handleRename(chat.id, chat.title || 'New chat')}
-                onShare={() => handleShare(chat.id)}
-                onExport={() => handleExport(chat.id)}
-                onPinChat={() => handlePinChat(chat.id)}
-                onArchive={() => handleArchive(chat.id)}
-                onStartGroupChat={() => handleStartGroupChat(chat.id)}
+                onBlur={() => {
+                  if (newTitle) handleRenameConfirm(renameDialogId)
+                  setRenameDialogId(null)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newTitle) {
+                    handleRenameConfirm(renameDialogId)
+                    setRenameDialogId(null)
+                  } else if (e.key === 'Escape') {
+                    setRenameDialogId(null)
+                  }
+                }}
               />
-            )
-          ))}
+            </div>
+          ) : null}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            {unfiledChats.map((chat) => (
+              renameDialogId === chat.id ? null : (
+                <RecentItem
+                  key={chat.id}
+                  id={chat.id}
+                  title={chat.title || 'New chat'}
+                  active={chat.id === activeChatId}
+                  isPinned={pinnedChats.has(chat.id)}
+                  folders={folders}
+                  currentFolderId={null}
+                  onMoveToFolder={(folderId) => moveChatToFolder(chat.id, folderId)}
+                  onClick={() => {
+                    onSelectRecent(chat.id)
+                    handleChangeView('chats')
+                  }}
+                  onDelete={() => handleDelete(chat.id)}
+                  onRename={() => handleRename(chat.id, chat.title || 'New chat')}
+                  onShare={() => handleShare(chat.id)}
+                  onExport={() => handleExport(chat.id)}
+                  onPinChat={() => handlePinChat(chat.id)}
+                  onArchive={() => handleArchive(chat.id)}
+                  onStartGroupChat={() => handleStartGroupChat(chat.id)}
+                />
+              )
+            ))}
+          </div>
         </div>
       </div>
 

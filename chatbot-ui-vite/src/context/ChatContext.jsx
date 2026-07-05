@@ -12,6 +12,11 @@ export function ChatProvider({ children }) {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [folders, setFolders] = useState(() => {
+    const saved = localStorage.getItem("pragna_folders");
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [activeChatId, setActiveChatId] = useState(() => {
     const saved = localStorage.getItem("pragna_active_chat_id");
     return saved || null;
@@ -60,6 +65,10 @@ export function ChatProvider({ children }) {
   useEffect(() => {
     localStorage.setItem("pragna_chats", JSON.stringify(chats));
   }, [chats]);
+
+  useEffect(() => {
+    localStorage.setItem("pragna_folders", JSON.stringify(folders));
+  }, [folders]);
 
   // Save chat mode
   useEffect(() => {
@@ -121,6 +130,33 @@ export function ChatProvider({ children }) {
     }
   };
 
+  const createFolder = (name) => {
+    const trimmed = (name || "").trim();
+    if (!trimmed) return;
+    setFolders((prev) => [...prev, { id: Date.now().toString(), name: trimmed }]);
+  };
+
+  const renameFolder = (folderId, name) => {
+    const trimmed = (name || "").trim();
+    if (!trimmed) return;
+    setFolders((prev) =>
+      prev.map((f) => (f.id === folderId ? { ...f, name: trimmed } : f))
+    );
+  };
+
+  const deleteFolder = (folderId) => {
+    setFolders((prev) => prev.filter((f) => f.id !== folderId));
+    setChats((prev) =>
+      prev.map((c) => (c.folderId === folderId ? { ...c, folderId: null } : c))
+    );
+  };
+
+  const moveChatToFolder = (chatId, folderId) => {
+    setChats((prev) =>
+      prev.map((c) => (c.id === chatId ? { ...c, folderId } : c))
+    );
+  };
+
   return (
     <ChatContext.Provider
       value={{
@@ -141,6 +177,11 @@ export function ChatProvider({ children }) {
         login,
         logout,
         deleteChat,
+        folders,
+        createFolder,
+        renameFolder,
+        deleteFolder,
+        moveChatToFolder,
         chatMode,
         setChatMode,
         inputRef,

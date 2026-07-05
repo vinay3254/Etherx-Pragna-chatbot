@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { MoreVertical, Share, Users, Edit2, Pin, Archive, Trash2, Download } from 'lucide-react'
+import { MoreVertical, Share, Users, Edit2, Pin, Archive, Trash2, Download, Folder } from 'lucide-react'
 
 const RecentItem = ({
   id,
@@ -12,12 +12,20 @@ const RecentItem = ({
   onPinChat,
   onArchive,
   onStartGroupChat,
+  onMoveToFolder,
+  folders = [],
+  currentFolderId = null,
   active = false,
   isPinned = false
 }) => {
   const [showMenu, setShowMenu] = useState(false)
+  const [showFolderSubmenu, setShowFolderSubmenu] = useState(false)
   const menuRef = useRef(null)
   const buttonRef = useRef(null)
+
+  useEffect(() => {
+    if (!showMenu) setShowFolderSubmenu(false)
+  }, [showMenu])
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -41,6 +49,11 @@ const RecentItem = ({
   return (
     <div
       onClick={onClick}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', id)
+        e.dataTransfer.effectAllowed = 'move'
+      }}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -245,6 +258,82 @@ const RecentItem = ({
             <Pin size={14} />
             <span>{isPinned ? 'Unpin' : 'Pin'}</span>
           </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowFolderSubmenu((v) => !v)
+            }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 10px',
+              borderRadius: '7px',
+              border: 'none',
+              background: 'transparent',
+              color: '#d8cbb0',
+              fontSize: '13px',
+              cursor: 'pointer',
+              textAlign: 'left',
+            }}
+            className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+          >
+            <Folder size={14} />
+            <span>Move to folder</span>
+          </button>
+
+          {showFolderSubmenu && (
+            <div style={{ padding: '2px 0 2px 18px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              {folders.length === 0 && (
+                <div style={{ padding: '6px 10px', fontSize: '12px', color: '#6b6152' }}>No folders yet</div>
+              )}
+              {folders.map((folder) => (
+                <button
+                  key={folder.id}
+                  onClick={(e) => handleMenuClick(e, () => onMoveToFolder?.(folder.id))}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '6px 10px',
+                    borderRadius: '7px',
+                    border: 'none',
+                    background: 'transparent',
+                    color: folder.id === currentFolderId ? '#e5c76b' : '#a89878',
+                    fontSize: '12.5px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                  className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+                >
+                  {folder.name}
+                </button>
+              ))}
+              {currentFolderId && (
+                <button
+                  onClick={(e) => handleMenuClick(e, () => onMoveToFolder?.(null))}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '6px 10px',
+                    borderRadius: '7px',
+                    border: 'none',
+                    background: 'transparent',
+                    color: '#a89878',
+                    fontSize: '12.5px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                  className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+                >
+                  Remove from folder
+                </button>
+              )}
+            </div>
+          )}
 
           <button
             onClick={(e) => handleMenuClick(e, onArchive)}
