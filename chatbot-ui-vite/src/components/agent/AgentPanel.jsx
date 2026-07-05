@@ -1,22 +1,56 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import {
+  Bot, Search, Hammer, Bug, BookOpen, Sparkles,
+  Brain, Wrench, Upload, AlertTriangle, CheckCircle2, XCircle,
+  Paperclip, Square, Trash2, ChevronUp, ChevronDown,
+} from 'lucide-react'
 import { runAgentStream, resumeAgentStream } from '../../api/api'
 
 const MODES = [
-  { id: 'general',     label: 'General',     icon: '🤖', desc: 'General coding assistant' },
-  { id: 'code_review', label: 'Code Review',  icon: '🔍', desc: 'Bugs, security, style analysis' },
-  { id: 'app_builder', label: 'App Builder',  icon: '🏗️', desc: 'Build complete apps step by step' },
-  { id: 'debug',       label: 'Debug',        icon: '🐛', desc: 'Find and fix bugs systematically' },
-  { id: 'explain',     label: 'Explain',      icon: '📖', desc: 'Understand code and concepts' },
-  { id: 'refactor',    label: 'Refactor',     icon: '✨', desc: 'Clean up and improve code' },
+  { id: 'general',     label: 'General',     icon: Bot,      desc: 'General coding assistant' },
+  { id: 'code_review', label: 'Code Review',  icon: Search,   desc: 'Bugs, security, style analysis' },
+  { id: 'app_builder', label: 'App Builder',  icon: Hammer,   desc: 'Build complete apps step by step' },
+  { id: 'debug',       label: 'Debug',        icon: Bug,      desc: 'Find and fix bugs systematically' },
+  { id: 'explain',     label: 'Explain',      icon: BookOpen, desc: 'Understand code and concepts' },
+  { id: 'refactor',    label: 'Refactor',     icon: Sparkles, desc: 'Clean up and improve code' },
 ]
 
+// Event stream palette: cards sit on the gold/dark surface (`rgba(20,20,20,0.82)`),
+// only the border/label accent carries the semantic color (thinking = gold,
+// tool activity = green, needs-attention = amber, error = red).
 const EVENT_COLORS = {
-  thought:     { bg: '#1a2035', border: '#3b4fd8', label: '💭 Thinking', labelColor: '#818cf8' },
-  tool_call:   { bg: '#0d1f18', border: '#059669', label: '🔧 Tool Call', labelColor: '#34d399' },
-  tool_result: { bg: '#1a1505', border: '#d97706', label: '📤 Result',   labelColor: '#fbbf24' },
-  confirm_required: { bg: '#1f1a05', border: '#d97706', label: '⚠️ Approval needed', labelColor: '#fbbf24' },
-  done:        { bg: '#0d1f18', border: '#10b981', label: '✅ Done',      labelColor: '#6ee7b7' },
-  error:       { bg: '#1f0d0d', border: '#ef4444', label: '❌ Error',     labelColor: '#fca5a5' },
+  thought:     { bg: 'rgba(20,20,20,0.82)', border: 'rgba(212,175,55,0.4)',  label: 'Thinking',        labelColor: '#e5c76b', Icon: Brain },
+  tool_call:   { bg: 'rgba(20,20,20,0.82)', border: 'rgba(52,211,153,0.4)',  label: 'Tool Call',       labelColor: '#34d399', Icon: Wrench },
+  tool_result: { bg: 'rgba(20,20,20,0.82)', border: 'rgba(251,191,36,0.35)', label: 'Result',          labelColor: '#fbbf24', Icon: Upload },
+  confirm_required: { bg: 'rgba(20,20,20,0.82)', border: 'rgba(251,191,36,0.5)', label: 'Approval needed', labelColor: '#fbbf24', Icon: AlertTriangle },
+  done:        { bg: 'rgba(20,20,20,0.82)', border: 'rgba(52,211,153,0.4)',  label: 'Done',            labelColor: '#6ee7b7', Icon: CheckCircle2 },
+  error:       { bg: 'rgba(20,20,20,0.82)', border: 'rgba(248,113,113,0.4)', label: 'Error',           labelColor: '#fca5a5', Icon: XCircle },
+}
+
+function LightningIcon({ size = 22, glow = false }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#d4af37"
+      strokeWidth={glow ? 1.6 : 2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={glow ? { filter: 'drop-shadow(0 0 14px rgba(212,175,55,0.4))' } : undefined}
+    >
+      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+    </svg>
+  )
+}
+
+function PlayIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M8 5v14l11-7z" />
+    </svg>
+  )
 }
 
 function ToolCallCard({ event }) {
@@ -26,20 +60,26 @@ function ToolCallCard({ event }) {
   return (
     <div style={{
       background: cfg.bg,
+      backdropFilter: 'blur(8px)',
       border: `1px solid ${cfg.border}`,
       borderRadius: 10,
       padding: '10px 14px',
       margin: '6px 0',
       fontFamily: 'monospace',
       fontSize: 13,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.28)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
            onClick={() => setExpanded(e => !e)}>
-        <span style={{ color: cfg.labelColor, fontWeight: 700 }}>🔧 {event.tool}</span>
-        <span style={{ color: '#64748b', fontSize: 11, marginLeft: 'auto' }}>{expanded ? '▲' : '▼'} args</span>
+        <span style={{ color: cfg.labelColor, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Wrench size={13} /> {event.tool}
+        </span>
+        <span style={{ color: '#a89878', fontSize: 11, marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />} args
+        </span>
       </div>
       {expanded && (
-        <pre style={{ margin: '8px 0 0', color: '#94a3b8', fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+        <pre style={{ margin: '8px 0 0', color: '#a89878', fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
           {JSON.stringify(event.args, null, 2)}
         </pre>
       )}
@@ -56,19 +96,27 @@ function ToolResultCard({ event }) {
   return (
     <div style={{
       background: cfg.bg,
+      backdropFilter: 'blur(8px)',
       border: `1px solid ${cfg.border}`,
       borderRadius: 10,
       padding: '10px 14px',
       margin: '6px 0',
       fontFamily: 'monospace',
       fontSize: 12,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.28)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: hasMore ? 'pointer' : 'default' }}
            onClick={() => hasMore && setExpanded(e => !e)}>
-        <span style={{ color: cfg.labelColor, fontWeight: 700 }}>📤 {event.tool} result</span>
-        {hasMore && <span style={{ color: '#64748b', fontSize: 11, marginLeft: 'auto' }}>{expanded ? '▲ less' : '▼ more'}</span>}
+        <span style={{ color: cfg.labelColor, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Upload size={13} /> {event.tool} result
+        </span>
+        {hasMore && (
+          <span style={{ color: '#a89878', fontSize: 11, marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />} {expanded ? 'less' : 'more'}
+          </span>
+        )}
       </div>
-      <pre style={{ margin: '6px 0 0', color: '#94a3b8', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+      <pre style={{ margin: '6px 0 0', color: '#a89878', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
         {expanded ? event.content : (preview + (hasMore ? '...' : ''))}
       </pre>
     </div>
@@ -81,17 +129,19 @@ function ConfirmCard({ event, onDecision }) {
   return (
     <div style={{
       background: cfg.bg,
+      backdropFilter: 'blur(8px)',
       border: `1px solid ${cfg.border}`,
       borderRadius: 10,
       padding: '10px 14px',
       margin: '6px 0',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.28)',
     }}>
-      <div style={{ color: cfg.labelColor, fontWeight: 700, fontSize: 12, marginBottom: 6 }}>
-        {cfg.label}: {event.tool}
+      <div style={{ color: cfg.labelColor, fontWeight: 700, fontSize: 12, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <AlertTriangle size={13} /> {cfg.label}: {event.tool}
       </div>
       <pre style={{
         margin: '0 0 10px',
-        color: '#cbd5e1',
+        color: '#f0e6d3',
         fontSize: 12,
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-all',
@@ -106,28 +156,34 @@ function ConfirmCard({ event, onDecision }) {
           color: event.resolved === 'approved' ? '#6ee7b7' : '#fca5a5',
           fontSize: 12,
           fontWeight: 700,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
         }}>
-          {event.resolved === 'approved' ? '✓ Approved' : '✗ Rejected'}
+          {event.resolved === 'approved' ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+          {event.resolved === 'approved' ? 'Approved' : 'Rejected'}
         </div>
       ) : (
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             onClick={() => onDecision(event, 'approve')}
             style={{
-              padding: '6px 14px', borderRadius: 8, border: '1px solid #059669',
-              background: '#0d1f18', color: '#34d399', fontWeight: 700, fontSize: 12, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(52,211,153,0.4)',
+              background: 'rgba(20,20,20,0.82)', color: '#34d399', fontWeight: 700, fontSize: 12, cursor: 'pointer',
             }}
           >
-            ✓ Approve
+            <CheckCircle2 size={14} /> Approve
           </button>
           <button
             onClick={() => onDecision(event, 'reject')}
             style={{
-              padding: '6px 14px', borderRadius: 8, border: '1px solid #ef4444',
-              background: '#1f0d0d', color: '#fca5a5', fontWeight: 700, fontSize: 12, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(248,113,113,0.4)',
+              background: 'rgba(20,20,20,0.82)', color: '#fca5a5', fontWeight: 700, fontSize: 12, cursor: 'pointer',
             }}
           >
-            ✗ Reject
+            <XCircle size={14} /> Reject
           </button>
         </div>
       )}
@@ -145,21 +201,23 @@ function EventBlock({ event, onDecision }) {
   return (
     <div style={{
       background: cfg.bg,
+      backdropFilter: 'blur(8px)',
       border: `1px solid ${cfg.border}`,
       borderRadius: 10,
       padding: '10px 14px',
       margin: '6px 0',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.28)',
     }}>
-      <div style={{ color: cfg.labelColor, fontWeight: 700, fontSize: 12, marginBottom: 6 }}>
-        {cfg.label}
+      <div style={{ color: cfg.labelColor, fontWeight: 700, fontSize: 12, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <cfg.Icon size={13} /> {cfg.label}
       </div>
       <div style={{
-        color: event.type === 'done' ? '#e2e8f0' : '#cbd5e1',
+        color: event.type === 'done' ? '#f0e6d3' : '#f0e6d3',
         fontSize: 14,
         lineHeight: 1.65,
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-word',
-        fontFamily: event.type === 'done' ? 'inherit' : 'inherit',
+        fontFamily: 'inherit',
       }}>
         {event.content}
       </div>
@@ -170,11 +228,11 @@ function EventBlock({ event, onDecision }) {
 function ThinkingDots() {
   return (
     <div style={{ display: 'flex', gap: 5, padding: '10px 0', alignItems: 'center' }}>
-      <span style={{ color: '#818cf8', fontSize: 13 }}>Agent is thinking</span>
+      <span style={{ color: '#e5c76b', fontSize: 13 }}>Agent is thinking</span>
       {[0, 1, 2].map(i => (
         <span key={i} style={{
           width: 6, height: 6, borderRadius: '50%',
-          background: '#818cf8',
+          background: '#d4af37',
           display: 'inline-block',
           animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
         }} />
@@ -260,35 +318,36 @@ export default function AgentPanel() {
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
-      background: '#0b0f1a',
-      color: '#e2e8f0',
+      background: '#0a0a0a',
+      color: '#f0e6d3',
       fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
     }}>
       {/* Header */}
       <div style={{
         padding: '18px 24px 14px',
-        borderBottom: '1px solid #1e293b',
-        background: '#0d1117',
+        borderBottom: '1px solid #2d2a24',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-          <span style={{ fontSize: 22 }}>⚡</span>
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#f1f5f9' }}>Pragna Code</h2>
+          <LightningIcon size={22} />
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#f0e6d3' }}>Pragna Code</h2>
           <span style={{
-            background: '#1e3a5f',
-            color: '#60a5fa',
+            padding: '3px 11px',
+            borderRadius: 999,
+            background: 'rgba(212,175,55,0.14)',
+            border: '1px solid rgba(212,175,55,0.3)',
+            color: '#d4af37',
             fontSize: 11,
-            padding: '2px 8px',
-            borderRadius: 20,
-            fontWeight: 600,
+            fontWeight: 700,
+            letterSpacing: '0.6px',
           }}>AGENT</span>
         </div>
-        <p style={{ margin: 0, color: '#64748b', fontSize: 13 }}>
+        <p style={{ margin: 0, color: '#a89878', fontSize: 13 }}>
           Agentic AI that reads, writes, and runs code autonomously via Ollama
         </p>
       </div>
 
       {/* Mode selector */}
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid #1e293b' }}>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid #2d2a24' }}>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {MODES.map(mode => (
             <button
@@ -297,10 +356,12 @@ export default function AgentPanel() {
               title={mode.desc}
               style={{
                 padding: '6px 12px',
-                borderRadius: 20,
-                border: selectedMode === mode.id ? '1px solid #6366f1' : '1px solid #1e293b',
-                background: selectedMode === mode.id ? '#1e1b4b' : '#111827',
-                color: selectedMode === mode.id ? '#a5b4fc' : '#94a3b8',
+                borderRadius: 999,
+                border: selectedMode === mode.id ? '1px solid rgba(212,175,55,0.5)' : '1px solid #2d2a24',
+                background: selectedMode === mode.id
+                  ? 'linear-gradient(135deg, rgba(212,175,55,0.22), rgba(184,134,11,0.12))'
+                  : 'rgba(20,20,20,0.82)',
+                color: selectedMode === mode.id ? '#e5c76b' : '#a89878',
                 fontSize: 12,
                 fontWeight: selectedMode === mode.id ? 700 : 400,
                 cursor: 'pointer',
@@ -310,13 +371,13 @@ export default function AgentPanel() {
                 transition: 'all 0.15s',
               }}
             >
-              {mode.icon} {mode.label}
+              <mode.icon size={13} /> {mode.label}
             </button>
           ))}
         </div>
         {activeMode && (
-          <p style={{ margin: '8px 0 0', color: '#475569', fontSize: 12 }}>
-            {activeMode.icon} <strong style={{ color: '#64748b' }}>{activeMode.label}:</strong> {activeMode.desc}
+          <p style={{ margin: '8px 0 0', color: '#a89878', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <activeMode.icon size={13} /> <strong style={{ color: '#d4af37' }}>{activeMode.label}:</strong> {activeMode.desc}
           </p>
         )}
       </div>
@@ -324,18 +385,20 @@ export default function AgentPanel() {
       {/* Events stream */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
         {events.length === 0 && !isRunning && (
-          <div style={{ textAlign: 'center', padding: '40px 20px', color: '#334155' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>⚡</div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: '#475569', marginBottom: 8 }}>
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+              <LightningIcon size={34} glow />
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#f0e6d3', marginBottom: 8 }}>
               Ready to work
             </div>
-            <div style={{ fontSize: 13, color: '#334155', lineHeight: 1.7 }}>
+            <div style={{ fontSize: 13, color: '#a89878', lineHeight: 1.7 }}>
               Type a task below. The agent will think, use tools, and complete the job autonomously.<br />
               Examples:<br />
-              <span style={{ color: '#4b5563' }}>• "Review the backend code for security issues"</span><br />
-              <span style={{ color: '#4b5563' }}>• "Create a REST API for user authentication"</span><br />
-              <span style={{ color: '#4b5563' }}>• "Debug why image generation returns empty"</span><br />
-              <span style={{ color: '#4b5563' }}>• "Explain how the RAG system works"</span>
+              <span style={{ opacity: 0.85 }}>• "Review the backend code for security issues"</span><br />
+              <span style={{ opacity: 0.85 }}>• "Create a REST API for user authentication"</span><br />
+              <span style={{ opacity: 0.85 }}>• "Debug why image generation returns empty"</span><br />
+              <span style={{ opacity: 0.85 }}>• "Explain how the RAG system works"</span>
             </div>
           </div>
         )}
@@ -349,13 +412,12 @@ export default function AgentPanel() {
       {/* Input area */}
       <div style={{
         padding: '14px 16px',
-        borderTop: '1px solid #1e293b',
-        background: '#0d1117',
+        borderTop: '1px solid #2d2a24',
       }}>
         {/* Context files input (collapsible) */}
         <details style={{ marginBottom: 8 }}>
-          <summary style={{ color: '#475569', fontSize: 12, cursor: 'pointer', marginBottom: 4 }}>
-            📎 Context files (optional — paths to pre-load)
+          <summary style={{ color: '#a89878', fontSize: 12, cursor: 'pointer', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Paperclip size={13} /> Context files (optional — paths to pre-load)
           </summary>
           <textarea
             value={contextFiles}
@@ -364,11 +426,11 @@ export default function AgentPanel() {
             rows={2}
             style={{
               width: '100%',
-              background: '#111827',
-              border: '1px solid #1e293b',
+              background: 'rgba(20,20,20,0.82)',
+              border: '1px solid #2d2a24',
               borderRadius: 8,
               padding: '8px 10px',
-              color: '#94a3b8',
+              color: '#a89878',
               fontSize: 12,
               fontFamily: 'monospace',
               resize: 'vertical',
@@ -378,92 +440,113 @@ export default function AgentPanel() {
           />
         </details>
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-          <textarea
-            ref={textareaRef}
-            value={task}
-            onChange={e => setTask(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={`Describe your task for ${activeMode?.label || 'the agent'}… (Ctrl+Enter to run)`}
-            rows={3}
-            disabled={isRunning}
-            style={{
-              flex: 1,
-              background: '#111827',
-              border: '1px solid #1e3a5f',
-              borderRadius: 10,
-              padding: '10px 12px',
-              color: '#e2e8f0',
-              fontSize: 14,
-              fontFamily: 'inherit',
-              resize: 'vertical',
-              outline: 'none',
-              lineHeight: 1.5,
-              boxSizing: 'border-box',
-              minHeight: 72,
-              opacity: isRunning ? 0.6 : 1,
-            }}
-          />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {isRunning ? (
-              <button
-                onClick={handleStop}
-                style={{
-                  padding: '10px 18px',
-                  borderRadius: 10,
-                  border: '1px solid #ef4444',
-                  background: '#1f0d0d',
-                  color: '#fca5a5',
-                  fontWeight: 700,
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                ⛔ Stop
-              </button>
-            ) : (
-              <button
-                onClick={handleRun}
-                disabled={!task.trim()}
-                style={{
-                  padding: '10px 18px',
-                  borderRadius: 10,
-                  border: 'none',
-                  background: task.trim() ? 'linear-gradient(135deg, #4f46e5, #6366f1)' : '#1e293b',
-                  color: task.trim() ? '#fff' : '#475569',
-                  fontWeight: 700,
-                  fontSize: 13,
-                  cursor: task.trim() ? 'pointer' : 'not-allowed',
-                  whiteSpace: 'nowrap',
-                  boxShadow: task.trim() ? '0 2px 12px rgba(99,102,241,0.4)' : 'none',
-                  transition: 'all 0.15s',
-                }}
-              >
-                ▶ Run
-              </button>
-            )}
-            {events.length > 0 && !isRunning && (
-              <button
-                onClick={handleClear}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: 8,
-                  border: '1px solid #1e293b',
-                  background: 'transparent',
-                  color: '#475569',
-                  fontSize: 12,
-                  cursor: 'pointer',
-                }}
-              >
-                🗑 Clear
-              </button>
-            )}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+          padding: '14px 16px',
+          borderRadius: 14,
+          background: 'rgba(20,20,20,0.82)',
+          border: '1px solid rgba(212,175,55,0.18)',
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 12px 28px rgba(0,0,0,0.42)',
+        }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+            <textarea
+              ref={textareaRef}
+              value={task}
+              onChange={e => setTask(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={`Describe your task for ${activeMode?.label || 'the agent'}… (Ctrl+Enter to run)`}
+              rows={3}
+              disabled={isRunning}
+              style={{
+                flex: 1,
+                background: 'transparent',
+                border: 'none',
+                borderRadius: 0,
+                padding: 0,
+                color: '#f0e6d3',
+                fontSize: 14,
+                fontFamily: 'inherit',
+                resize: 'vertical',
+                outline: 'none',
+                lineHeight: 1.5,
+                boxSizing: 'border-box',
+                minHeight: 72,
+                opacity: isRunning ? 0.6 : 1,
+              }}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {isRunning ? (
+                <button
+                  onClick={handleStop}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 7,
+                    padding: '9px 18px',
+                    borderRadius: 10,
+                    border: '1px solid rgba(248,113,113,0.4)',
+                    background: 'rgba(20,20,20,0.82)',
+                    color: '#fca5a5',
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <Square size={12} fill="currentColor" /> Stop
+                </button>
+              ) : (
+                <button
+                  onClick={handleRun}
+                  disabled={!task.trim()}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 7,
+                    padding: '9px 18px',
+                    borderRadius: 10,
+                    border: 'none',
+                    background: task.trim() ? 'linear-gradient(135deg, #e5c76b, #b8860b)' : '#2d2a24',
+                    color: task.trim() ? '#0a0a0a' : '#6b6558',
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: task.trim() ? 'pointer' : 'not-allowed',
+                    whiteSpace: 'nowrap',
+                    boxShadow: task.trim() ? '0 2px 8px rgba(0,0,0,0.28)' : 'none',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <PlayIcon /> Run
+                </button>
+              )}
+              {events.length > 0 && !isRunning && (
+                <button
+                  onClick={handleClear}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    border: '1px solid #2d2a24',
+                    background: 'transparent',
+                    color: '#a89878',
+                    fontSize: 12,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Trash2 size={12} /> Clear
+                </button>
+              )}
+            </div>
           </div>
+          <p style={{ margin: 0, color: '#a89878', fontSize: 11.5, opacity: 0.75 }}>
+            Ctrl+Enter to run • Agent uses Ollama model: <strong style={{ color: '#a89878' }}>{'{OLLAMA_MODEL}'}</strong>
+          </p>
         </div>
-        <p style={{ margin: '6px 0 0', color: '#374151', fontSize: 11 }}>
-          Ctrl+Enter to run • Agent uses Ollama model: <strong style={{ color: '#4b5563' }}>{'{OLLAMA_MODEL}'}</strong>
-        </p>
       </div>
 
       <style>{`

@@ -25,6 +25,10 @@ export function ChatProvider({ children }) {
     setLanguage(normalizeLanguageCode(nextLanguage));
   };
 
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("pragna_theme") || "dark";
+  });
+
   const [isLoading, setIsLoading] = useState(false);
 
   // Sidebar: closed by default on mobile, open on desktop
@@ -74,6 +78,13 @@ export function ChatProvider({ children }) {
     localStorage.setItem("pragna_language", language);
   }, [language]);
 
+  useEffect(() => {
+    localStorage.setItem("pragna_theme", theme);
+    if (typeof document !== "undefined") {
+      document.documentElement.setAttribute("data-theme", theme);
+    }
+  }, [theme]);
+
   // Auto-initialize first chat if none exist
   useEffect(() => {
     if (!activeChatId && chats.length > 0) {
@@ -120,6 +131,8 @@ export function ChatProvider({ children }) {
         newChat,
         language,
         setLanguage: setNormalizedLanguage,
+        theme,
+        setTheme,
         isLoading,
         setIsLoading,
         sidebarOpen,

@@ -29,13 +29,19 @@ const VoiceIcon = () => (
     <path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14" />
   </svg>
 );
+const ErrorIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d98b7f" strokeWidth="2.2" strokeLinecap="round">
+    <path d="M12 8v5M12 16.5v.5" />
+    <circle cx="12" cy="12" r="9.2" />
+  </svg>
+);
 
 // BCP-47 language tag map - Comprehensive support for all Indian regional languages
 // Includes all 22 official languages + tribal languages, modern variants, and international languages
 const LANG_TAG = {
   // International
   en: "en-US",        // English
-  
+
   // Major Official Indian Languages - Google TTS supported locales
   hi: "hi-IN",        // Hindi
   ta: "ta-IN",        // Tamil
@@ -48,7 +54,7 @@ const LANG_TAG = {
   bn: "bn-IN",        // Bengali
   or: "or-IN",        // Odia
   as: "as-IN",        // Assamese
-  
+
   // Regional Languages - Google TTS supported
   kok: "kok-IN",      // Konkani
   mni: "mni-IN",      // Manipuri
@@ -61,7 +67,7 @@ const LANG_TAG = {
   raj: "raj-IN",      // Rajasthani
   har: "har-IN",      // Haryanvi
   gom: "kok-IN",      // Goan Konkani → use Konkani
-  
+
   // Tribal & Other Languages
   ho: "hi-IN",        // Ho → fallback to Hindi (has Google support)
   kru: "hi-IN",       // Kurukh → fallback to Hindi
@@ -77,7 +83,7 @@ const LANG_TAG = {
 const LANGUAGE_CONFIG = {
   // International
   "en-US": { rate: 0.95, pitch: 1.0, volume: 1.0 },
-  
+
   // Major Official Indian Languages
   "hi-IN": { rate: 0.95, pitch: 1.0, volume: 1.0 },    // Hindi
   "ta-IN": { rate: 0.95, pitch: 1.0, volume: 1.0 },    // Tamil
@@ -90,7 +96,7 @@ const LANGUAGE_CONFIG = {
   "bn-IN": { rate: 0.95, pitch: 1.0, volume: 1.0 },    // Bengali
   "or-IN": { rate: 0.95, pitch: 1.0, volume: 1.0 },    // Odia
   "as-IN": { rate: 0.95, pitch: 1.0, volume: 1.0 },    // Assamese
-  
+
   // Regional Languages
   "kok-IN": { rate: 0.95, pitch: 1.0, volume: 1.0 },   // Konkani
   "mni-IN": { rate: 0.95, pitch: 1.0, volume: 1.0 },   // Manipuri
@@ -102,7 +108,7 @@ const LANGUAGE_CONFIG = {
   "doi-IN": { rate: 0.95, pitch: 1.0, volume: 1.0 },   // Dogri
   "raj-IN": { rate: 0.95, pitch: 1.0, volume: 1.0 },   // Rajasthani
   "har-IN": { rate: 0.95, pitch: 1.0, volume: 1.0 },   // Haryanvi
-  
+
   // Tribal & Others
   "brx-IN": { rate: 0.95, pitch: 1.0, volume: 1.0 },   // Bodo
   "ur-PK": { rate: 0.95, pitch: 1.0, volume: 1.0 },    // Urdu
@@ -120,33 +126,33 @@ const FEMALE_KEYWORDS = [
 // Clean text for speech: remove emojis, code blocks, markdown formatting
 const cleanTextForSpeech = (text) => {
   if (!text) return "";
-  
+
   // Remove code blocks (```...```)
   let cleaned = text.replace(/```[\s\S]*?```/g, "[code block]");
-  
+
   // Remove inline code (`...`)
   cleaned = cleaned.replace(/`[^`]+`/g, "");
-  
+
   // Remove markdown links [text](url) but keep the link text
   cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
-  
+
   // Remove markdown formatting but keep content
   cleaned = cleaned.replace(/(\*\*|__)(.*?)\1/g, "$2");  // Bold: **text** → text
   cleaned = cleaned.replace(/(\*|_)(.*?)\1/g, "$2");      // Italic: *text* → text
   cleaned = cleaned.replace(/~~(.*?)~~/g, "$1");          // Strikethrough: ~~text~~ → text
-  
+
   // Remove common emojis (but keep punctuation for intonation)
   cleaned = cleaned.replace(
     /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
     ""
   );
-  
+
   // Clean up extra spaces but preserve paragraph breaks
   cleaned = cleaned.replace(/\n\n+/g, ". ");  // Multiple newlines → period + space
   cleaned = cleaned.replace(/\n/g, " ");      // Single newline → space
   cleaned = cleaned.replace(/\s+/g, " ");     // Multiple spaces → single space
   cleaned = cleaned.trim();
-  
+
   return cleaned;
 };
 
@@ -162,45 +168,45 @@ function findVoiceForLanguage(langTag, preferFemale = true) {
 // Clean markdown formatting from text for clean display
 const cleanMarkdownForDisplay = (text) => {
   if (!text) return "";
-  
+
   let cleaned = text;
-  
+
   // Remove markdown headings (###, ##, #) anywhere in text, including mid-line
   cleaned = cleaned.replace(/#+\s+/g, "");
-  
+
   // Remove bold markdown ** and __ (handle nested cases)
   cleaned = cleaned.replace(/\*\*(.+?)\*\*/g, "$1");
   cleaned = cleaned.replace(/__(.*?)__/g, "$1");
-  
+
   // Remove italic markdown * and _ (but be careful with single asterisks)
   // This handles *text* and _text_ patterns
   cleaned = cleaned.replace(/([^\*]+)\*([^\*]+)\*([^\*]*)/g, "$1$2$3");
   cleaned = cleaned.replace(/([^_]+)_([^_]+)_([^_]*)/g, "$1$2$3");
-  
+
   // Remove bare markdown symbols that appear to be formatting attempts
   cleaned = cleaned.replace(/\s+\*\s+/g, " ");
   cleaned = cleaned.replace(/\s+_\s+/g, " ");
-  
+
   // Remove markdown links [text](url) but keep the link text
   cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
-  
+
   // Convert markdown bullet points to clean version
   cleaned = cleaned.replace(/^[\s]*[-*+]\s+/gm, "• ");
-  
+
   // Remove inline code markers but keep content
   cleaned = cleaned.replace(/`([^`]+)`/g, "$1");
-  
+
   // Remove strikethrough
   cleaned = cleaned.replace(/~~([^~]+)~~/g, "$1");
-  
+
   // Remove remaining stray markdown symbols
   cleaned = cleaned.replace(/^\s*#+\s*/gm, "");  // Leading hashes
   cleaned = cleaned.replace(/\*\*+/g, "");       // Extra asterisks
   cleaned = cleaned.replace(/___+/g, "");        // Extra underscores
-  
+
   // Clean up multiple spaces
   cleaned = cleaned.replace(/[ ]{2,}/g, " ");
-  
+
   return cleaned.trim();
 };
 
@@ -238,25 +244,72 @@ const parseMessageContent = (text) => {
   return parts.length > 0 ? parts : [{ type: "text", content: cleanMarkdownForDisplay(text) }];
 };
 
-// Render parsed message content with code blocks
-const renderMessageContent = (text, isStreaming) => {
+// Render parsed message content as a stack of blocks: text segments become
+// individual "glass card" bubbles, code segments render as standalone CodeBlocks
+// (mirrors the mock, where the bubble and the code block are visual siblings).
+const renderContentBlocks = (text, isStreaming) => {
   const parts = parseMessageContent(text);
-  return (
-    <>
-      {parts.map((part, idx) => {
-        if (part.type === "code") {
-          return <CodeBlock key={idx} code={part.content} language={part.language} />;
-        }
+  return parts.map((part, idx) => {
+    if (part.type === "code") {
+      return <CodeBlock key={idx} code={part.content} language={part.language} />;
+    }
+    const isLast = idx === parts.length - 1;
+    return (
+      <div
+        key={idx}
+        className="glass-card rounded-[4px_18px_18px_18px] px-5 py-4 text-[15px] leading-[1.65] whitespace-pre-wrap"
+        style={{ color: "var(--pragna-text)" }}
+      >
+        {part.content}
+        {isStreaming && isLast && <span className="cursor">|</span>}
+      </div>
+    );
+  });
+};
+
+// Shared ghost-icon-button styling for the message action row (copy/like/dislike/speak)
+const actionBtnBase =
+  "w-[30px] h-[30px] rounded-lg bg-transparent flex items-center justify-center transition-colors duration-150 [&>svg]:w-[18px] [&>svg]:h-[18px] hover:bg-surface-subtle hover:text-accent-400";
+
+const renderAttachments = (attachments) => (
+  <div className="flex flex-wrap gap-2 mb-1.5">
+    {attachments.map((att, i) => {
+      if (att.type === "image" && att.previewUrl) {
         return (
-          <span key={idx} style={{ whiteSpace: "pre-wrap", display: "block" }}>
-            {part.content}
-            {isStreaming && idx === parts.length - 1 && <span className="cursor">|</span>}
-          </span>
+          <img
+            key={i}
+            src={att.previewUrl}
+            alt={att.name}
+            className="msg-attachment-img"
+            onClick={() => window.open(att.previewUrl, "_blank")}
+          />
         );
-      })}
-    </>
-  );
-}
+      } else if (att.type === "video") {
+        return (
+          <div key={i} className="msg-attachment-file">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <rect x="2" y="5" width="15" height="14" rx="2"/>
+              <path d="M17 9l5-3v12l-5-3V9z"/>
+            </svg>
+            <span>{att.name}</span>
+          </div>
+        );
+      } else {
+        return (
+          <div key={i} className="msg-attachment-file">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="9" y1="13" x2="15" y2="13"/>
+              <line x1="9" y1="17" x2="13" y2="17"/>
+            </svg>
+            <span>{att.name}</span>
+          </div>
+        );
+      }
+    })}
+  </div>
+);
 
 export default function MessageBubble({ message, language = "en", onRetry }) {
   const [liked, setLiked] = useState(false);
@@ -307,17 +360,17 @@ export default function MessageBubble({ message, language = "en", onRetry }) {
 
     try {
       setSpeaking(true);
-      
+
       const targetLang = language || "en";
-      
+
       // Call backend to generate speech (backend handles Google TTS silently)
       const requestBody = {
         text: message.text,
         language: targetLang
       };
-      
+
       console.log(`Requesting speech from backend | Language: ${targetLang} | Text: ${message.text.substring(0, 50)}...`);
-      
+
       // Fetch audio from backend
       fetch('/api/speech', {
         method: 'POST',
@@ -337,7 +390,7 @@ export default function MessageBubble({ message, language = "en", onRetry }) {
           console.log(`Audio blob received | size: ${audioBlob.size} bytes | type: ${audioBlob.type}`);
           // Create object URL for the blob
           const audioUrl = URL.createObjectURL(audioBlob);
-          
+
           // Create and play audio
           const audio = new Audio(audioUrl);
           audioRef.current = audio;
@@ -388,103 +441,143 @@ export default function MessageBubble({ message, language = "en", onRetry }) {
   }, []);
 
   const isBot = message.sender === "bot";
-
+  const isError = isBot && !!message.error;
   const isStreaming = message.isStreaming;
-  const hasText = message.text?.trim().length > 0;
+  const hasText = (message.text || "").trim().length > 0;
+  const showTypingDots = isBot && isStreaming && !hasText && !isError;
+  const hasAttachments = message.attachments && message.attachments.length > 0;
 
-  return (
-    <div className={`message ${isBot ? "bot" : "user"}`}>
-      <div className={`message-row ${message.sender}`}>
-      <div className={`bubble ${message.sender}`}>
-        <div className="bubble-content" style={{ flexDirection: "column", alignItems: "flex-start" }}>
-          {/* Inline attachment previews */}
-          {message.attachments && message.attachments.length > 0 && (
-            <div className="msg-attachments">
-              {message.attachments.map((att, i) => {
-                if (att.type === "image" && att.previewUrl) {
-                  return (
-                    <img
-                      key={i}
-                      src={att.previewUrl}
-                      alt={att.name}
-                      className="msg-attachment-img"
-                      onClick={() => window.open(att.previewUrl, "_blank")}
-                    />
-                  );
-                } else if (att.type === "video") {
-                  return (
-                    <div key={i} className="msg-attachment-file">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                        <rect x="2" y="5" width="15" height="14" rx="2"/>
-                        <path d="M17 9l5-3v12l-5-3V9z"/>
-                      </svg>
-                      <span>{att.name}</span>
-                    </div>
-                  );
-                } else {
-                  return (
-                    <div key={i} className="msg-attachment-file">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="9" y1="13" x2="15" y2="13"/>
-                        <line x1="9" y1="17" x2="13" y2="17"/>
-                      </svg>
-                      <span>{att.name}</span>
-                    </div>
-                  );
-                }
-              })}
-            </div>
-          )}
-          {isBot && isStreaming && !hasText ? (
-            // Show animated processing dots before first text arrives
-            <span className="processing-text">
-              <span className="dots"><span>.</span><span>.</span><span>.</span></span>
-            </span>
-          ) : (
-            renderMessageContent(message.text, isStreaming)
-          )}
+  // ── User message: gold-gradient bubble ─────────────────────────────────
+  if (!isBot) {
+    return (
+      <div className="flex flex-col items-end animate-[fadeUp_0.3s_ease]">
+        <div
+          className="max-w-[78%] rounded-[18px_18px_4px_18px] px-[18px] py-3 text-[15px] leading-[1.5] shadow-premium-md whitespace-pre-wrap break-words"
+          style={{
+            background: "linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold))",
+            color: "var(--pragna-on-gold)",
+            fontWeight: 550,
+          }}
+        >
+          {hasAttachments && renderAttachments(message.attachments)}
+          {message.text}
         </div>
-        {/* Only show action icons when streaming is done */}
-        {isBot && !isStreaming && (
-          <div className="message-actions">
-            <button type="button" onClick={copyToClipboard} title="Copy">
-              <CopyIcon />
-            </button>
-            <button
-              type="button"
-              className={liked ? "active" : ""}
-              onClick={handleThumbsUp}
-              title="Good response"
-            >
-              <ThumbsUpIcon filled={liked} />
-            </button>
-            <button
-              type="button"
-              className={disliked ? "active" : ""}
-              onClick={handleThumbsDown}
-              title="Bad response"
-            >
-              <ThumbsDownIcon filled={disliked} />
-            </button>
-            {onRetry && (
-              <button type="button" onClick={onRetry} title="Regenerate">
-                <RetryIcon />
-              </button>
-            )}
-            <button
-              type="button"
-              className={speaking ? "active" : ""}
-              onClick={speakText}
-              title="Read aloud"
-            >
-              <VoiceIcon />
-            </button>
+      </div>
+    );
+  }
+
+  // ── Assistant / error message ───────────────────────────────────────────
+  return (
+    <div className="flex flex-col items-start animate-[fadeUp_0.3s_ease]">
+      <div className="flex gap-3.5 max-w-[92%] min-w-0">
+        {isError ? (
+          <div
+            className="w-8 h-8 shrink-0 mt-0.5 rounded-[9px] flex items-center justify-center"
+            style={{ background: "rgba(180,60,60,0.15)", border: "1px solid rgba(220,110,100,0.35)" }}
+          >
+            <ErrorIcon />
+          </div>
+        ) : (
+          <div
+            className="w-8 h-8 shrink-0 mt-0.5 rounded-[9px] flex items-center justify-center font-extrabold text-[13px] shadow-premium-sm"
+            style={{ background: "linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold-deep))", color: "#0a0a0a" }}
+          >
+            P
           </div>
         )}
+
+        <div className="flex flex-col gap-2.5 min-w-0 flex-1">
+          {hasAttachments && renderAttachments(message.attachments)}
+
+          {showTypingDots ? (
+            <div className="glass-card w-fit flex items-center gap-[5px] rounded-[4px_18px_18px_18px] px-[18px] py-3.5">
+              <span className="w-[7px] h-[7px] rounded-full" style={{ background: "var(--pragna-gold)", animation: "dotBlink 1.2s infinite" }} />
+              <span className="w-[7px] h-[7px] rounded-full" style={{ background: "var(--pragna-gold)", animation: "dotBlink 1.2s infinite 0.2s" }} />
+              <span className="w-[7px] h-[7px] rounded-full" style={{ background: "var(--pragna-gold)", animation: "dotBlink 1.2s infinite 0.4s" }} />
+            </div>
+          ) : isError ? (
+            <div
+              className="min-w-0 rounded-[4px_18px_18px_18px] px-5 py-4 shadow-premium-sm"
+              style={{ background: "rgba(48,22,20,0.55)", border: "1px solid rgba(220,110,100,0.28)", backdropFilter: "blur(8px)" }}
+            >
+              <div className="text-[14px] font-bold tracking-[0.3px] mb-1.5" style={{ color: "#e8a598" }}>
+                Something went wrong
+              </div>
+              <div className="text-[13.5px] leading-[1.6] whitespace-pre-wrap" style={{ color: "#cfa9a0" }}>
+                {message.text}
+              </div>
+              {onRetry && (
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  title="Retry"
+                  className="mt-3 flex items-center gap-[7px] rounded-lg px-4 py-[7px] text-[13px] font-semibold transition-colors duration-150 [&>svg]:w-[13px] [&>svg]:h-[13px]"
+                  style={{
+                    border: "1px solid rgba(220,110,100,0.35)",
+                    background: "rgba(220,110,100,0.10)",
+                    color: "#e8a598",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(220,110,100,0.18)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(220,110,100,0.10)"; }}
+                >
+                  <RetryIcon />
+                  Retry
+                </button>
+              )}
+            </div>
+          ) : (
+            renderContentBlocks(message.text, isStreaming)
+          )}
+
+          {/* Only show action icons for finished, non-error assistant messages */}
+          {isBot && !isStreaming && !isError && (
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={copyToClipboard}
+                title="Copy"
+                className={`${actionBtnBase} text-[color:var(--pragna-text-muted)]`}
+              >
+                <CopyIcon />
+              </button>
+              <button
+                type="button"
+                onClick={handleThumbsUp}
+                title="Good response"
+                className={`${actionBtnBase} ${liked ? "text-accent-400" : "text-[color:var(--pragna-text-muted)]"}`}
+              >
+                <ThumbsUpIcon filled={liked} />
+              </button>
+              <button
+                type="button"
+                onClick={handleThumbsDown}
+                title="Bad response"
+                className={`${actionBtnBase} ${disliked ? "text-accent-400" : "text-[color:var(--pragna-text-muted)]"}`}
+              >
+                <ThumbsDownIcon filled={disliked} />
+              </button>
+              {onRetry && (
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  title="Regenerate"
+                  className={`${actionBtnBase} text-[color:var(--pragna-text-muted)]`}
+                >
+                  <RetryIcon />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={speakText}
+                title="Read aloud"
+                className={`${actionBtnBase} ${speaking ? "text-accent-400" : "text-[color:var(--pragna-text-muted)]"}`}
+              >
+                <VoiceIcon />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
     </div>
   );
 }

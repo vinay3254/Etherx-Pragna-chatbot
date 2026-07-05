@@ -1,19 +1,9 @@
-import { useState } from 'react'
-import { 
-  Plus, 
-  MessageSquare, 
-  Compass, 
-  Image, 
-  LayoutGrid, 
-  Settings,
-  Zap,
-  Globe,
-  Terminal
-} from 'lucide-react'
-import NavItem from './NavItem'
-import RecentItem from './RecentItem'
-import ChatManagementAPI from '../../api/chatManagement'
+import { useState, useRef, useEffect, useContext } from 'react'
 import pragnaLogo from '../../assets/pragna-logo-full.png'
+import ChatManagementAPI from '../../api/chatManagement'
+import RecentItem from './RecentItem'
+import { ChatContext } from '../../context/ChatContext'
+import { SUPPORTED_LANGUAGE_OPTIONS, normalizeLanguageCode } from '../../utils/language'
 
 const Sidebar = ({
   activeView,
@@ -26,12 +16,38 @@ const Sidebar = ({
   onLogout,
   userProfile,
   onClose,
+  onOpenSettings,
 }) => {
+  const { language, setLanguage } = useContext(ChatContext)
+
   const [pinnedChats, setPinnedChats] = useState(new Set())
   const [renameDialogId, setRenameDialogId] = useState(null)
   const [newTitle, setNewTitle] = useState('')
   const [loading, setLoading] = useState(null)
   const [error, setError] = useState(null)
+
+  // Menu popup states
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false)
+
+  const userMenuRef = useRef(null)
+  const userButtonRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        userMenuOpen &&
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target) &&
+        !userButtonRef.current?.contains(event.target)
+      ) {
+        setUserMenuOpen(false)
+        setLanguageMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [userMenuOpen])
 
   const handleChangeView = (viewId) => {
     onViewChange(viewId)
@@ -69,7 +85,6 @@ const Sidebar = ({
     try {
       setLoading('rename')
       await ChatManagementAPI.renameChat(chatId, newTitle)
-      // Trigger parent component to update the chat list
       setError(null)
     } catch (err) {
       setError(err.message || 'Failed to rename chat')
@@ -84,7 +99,6 @@ const Sidebar = ({
     try {
       setLoading('share')
       const result = await ChatManagementAPI.shareChat(chatId)
-      // Copy share URL to clipboard
       const shareUrl = `${window.location.origin}${result.share_url}`
       await navigator.clipboard.writeText(shareUrl)
       alert(`Share link copied to clipboard!\n${shareUrl}`)
@@ -121,7 +135,6 @@ const Sidebar = ({
     try {
       setLoading('archive')
       await ChatManagementAPI.archiveChat(chatId)
-      // Remove from recent chats list
       setError(null)
     } catch (err) {
       setError(err.message || 'Failed to archive chat')
@@ -136,7 +149,6 @@ const Sidebar = ({
       try {
         setLoading('delete')
         await ChatManagementAPI.deleteChat(chatId)
-        // Call parent delete handler
         onDeleteRecent?.(chatId)
         setError(null)
       } catch (err) {
@@ -148,116 +160,473 @@ const Sidebar = ({
     }
   }
 
-  const displayName = (userProfile?.username || localStorage.getItem('authUsername') || 'User').trim()
-  const displayEmail = (userProfile?.email || localStorage.getItem('authEmail') || '').trim()
+  const displayName = (userProfile?.username || localStorage.getItem('authUsername') || 'vianan').trim()
+  const displayEmail = (userProfile?.email || localStorage.getItem('authEmail') || 'ajnakna@gmail.com').trim()
   const initials = displayName
     .split(' ')
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
-    .join('') || 'U'
+    .join('') || 'V'
+
+  // Icon Helper (identical to mockup)
+  const icon = (paths, extra) => {
+    return (
+      <svg
+        width="17"
+        height="17"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {paths.map((d, i) => (
+          <path d={d} key={i} />
+        ))}
+        {extra || null}
+      </svg>
+    )
+  }
+
+  const navIcon = (name) => {
+    const c = (props) => <circle key="c" {...props} />
+    const r = (props) => <rect key={'r' + (props.x || '') + (props.y || '')} {...props} />
+    switch (name) {
+      case 'chats':
+        return icon(['M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'])
+      case 'explore':
+        return icon(['M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z'], c({ cx: 12, cy: 12, r: 10 }))
+      case 'images':
+        return icon(['M21 15l-5-5L5 21'], [r({ x: 3, y: 3, width: 18, height: 18, rx: 2, key: 'r' }), c({ cx: 8.5, cy: 8.5, r: 1.5, key: 'c' })])
+      case 'projects':
+        return icon([], [r({ x: 3, y: 3, width: 7, height: 7, rx: 1, key: 'r1' }), r({ x: 14, y: 3, width: 7, height: 7, rx: 1, key: 'r2' }), r({ x: 3, y: 14, width: 7, height: 7, rx: 1, key: 'r3' }), r({ x: 14, y: 14, width: 7, height: 7, rx: 1, key: 'r4' })])
+      case 'gpts':
+        return icon(['M13 2L3 14h9l-1 8 10-12h-9l1-8z'])
+      case 'intelligence':
+        return icon(['M2 12h20', 'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'], c({ cx: 12, cy: 12, r: 10 }))
+      case 'agent':
+        return icon(['M4 17l6-5-6-5', 'M12 19h8'])
+      default:
+        return null
+    }
+  }
+
+  const gearIcon = (name) => {
+    const c = (props) => <circle key="c" {...props} />
+    const r = (props) => <rect key="r" {...props} />
+    switch (name) {
+      case 'gear':
+        return icon(['M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'], c({ cx: 12, cy: 12, r: 3 }))
+      case 'globe':
+        return icon(['M2 12h20', 'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'], c({ cx: 12, cy: 12, r: 10 }))
+      case 'help':
+        return icon(['M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4', 'M12 17.5v.1'], c({ cx: 12, cy: 12, r: 9.2 }))
+      case 'list':
+        return icon(['M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'])
+      case 'download':
+        return icon(['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'M7 10l5 5 5-5', 'M12 15V3'])
+      case 'info':
+        return icon(['M12 16v-4M12 8h.01'], c({ cx: 12, cy: 12, r: 9.2 }))
+      case 'logout':
+        return icon(['M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4', 'M16 17l5-5-5-5', 'M21 12H9'])
+      default:
+        return null
+    }
+  }
+
+  const navItemsList = [
+    { id: 'chats', label: 'Chats' },
+    { id: 'explore', label: 'Explore' },
+    { id: 'images', label: 'Images' },
+    { id: 'projects', label: 'Projects' },
+    { id: 'gpts', label: 'GPTs' },
+    { id: 'intelligence', label: 'Intelligence' },
+    { id: 'agent', label: 'Agent' },
+  ]
+
+  const handleLanguageSelect = (code) => {
+    setLanguage(normalizeLanguageCode(code))
+    setLanguageMenuOpen(false)
+    setUserMenuOpen(false)
+  }
 
   return (
-    <div className="flex h-full flex-col bg-white border-r border-border">
-      {/* Header */}
-      <div className="p-5 pb-2">
-        <div className="flex items-center gap-2 mb-6">
-          <img src={pragnaLogo} alt="Pragna" className="header-logo-small" />
-          <span className="project-name">PRAGNA I-A</span>
-        </div>
-        
+    <aside style={{ width: '288px', flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'rgba(20,20,20,0.82)', borderRight: '1px solid #2d2a24', backdropFilter: 'blur(8px)', height: '100%' }}>
+      
+      {/* Wordmark logo */}
+      <div style={{ display: 'flex', alignItems: 'center', padding: '20px 20px 16px 20px' }}>
+        <img src={pragnaLogo} alt="Pragna I-A" style={{ height: '100px', width: 'auto', objectFit: 'contain' }} />
+      </div>
+
+      {/* New chat button */}
+      <div style={{ padding: '6px 16px 14px 16px' }}>
         <button
           onClick={onNewChat}
-          className="w-full flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all duration-200 group"
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '9px',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            border: '1px solid rgba(212,175,55,0.35)',
+            background: 'linear-gradient(135deg, rgba(212,175,55,0.16), rgba(184,134,11,0.10))',
+            color: '#e5c76b',
+            fontSize: '14px',
+            fontWeight: 600,
+            letterSpacing: '0.3px',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.28)',
+            transition: 'all 0.15s ease',
+          }}
+          className="hover:border-accent-500/55 hover:shadow-premium-md hover:from-accent-500/[.26] hover:to-accent-700/[.16] active:scale-[0.98]"
         >
-          <Plus size={18} className="text-gray-500 group-hover:text-accent-600" />
-          <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">New chat</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          New chat
         </button>
       </div>
 
-      {/* Navigation */}
-      <div className="flex-1 overflow-y-auto px-3">
-        <div className="space-y-1">
-          <NavItem icon={MessageSquare} label="Chats" active={activeView === 'chats'} onClick={() => handleChangeView('chats')} />
-          <NavItem icon={Compass} label="Explore" active={activeView === 'explore'} onClick={() => handleChangeView('explore')} />
-          <NavItem icon={Image} label="Images" active={activeView === 'images'} onClick={() => handleChangeView('images')} />
-          <NavItem icon={LayoutGrid} label="Projects" active={activeView === 'projects'} onClick={() => handleChangeView('projects')} />
-          <NavItem icon={Zap} label="GPTs" active={activeView === 'gpts'} onClick={() => handleChangeView('gpts')} />
-          <NavItem icon={Globe} label="Intelligence" active={activeView === 'intelligence'} onClick={() => handleChangeView('intelligence')} />
-          <NavItem icon={Terminal} label="Agent" active={activeView === 'agent'} onClick={() => handleChangeView('agent')} />
-        </div>
+      {/* Nav links */}
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: '3px', padding: '0 12px' }}>
+        {navItemsList.map((nav) => {
+          const active = activeView === nav.id
+          return (
+            <button
+              key={nav.id}
+              onClick={() => handleChangeView(nav.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '13px',
+                width: '100%',
+                padding: '11px 14px',
+                borderRadius: '11px',
+                border: active ? '1px solid rgba(212,175,55,0.30)' : '1px solid transparent',
+                background: active ? 'linear-gradient(135deg, rgba(212,175,55,0.14), rgba(184,134,11,0.07))' : 'transparent',
+                color: active ? '#e5c76b' : '#c9bda2',
+                fontSize: '14.5px',
+                fontWeight: active ? 650 : 500,
+                letterSpacing: '0.2px',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.15s ease',
+              }}
+              className="hover:bg-[#1a1a1a] hover:text-[#e5c76b]"
+            >
+              <span style={{ display: 'flex', width: '20px', height: '20px', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {navIcon(nav.id)}
+              </span>
+              {nav.label}
+            </button>
+          )
+        })}
+      </nav>
 
-        <div className="mt-8">
-          <div className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-            Recents
+      {/* Recents */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '20px 12px 12px 12px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '3px',
+          minHeight: 0,
+        }}
+      >
+        <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: '#a89878', padding: '0 14px 10px 14px' }}>
+          RECENTS
+        </div>
+        
+        {renameDialogId ? (
+          <div style={{ padding: '6px 14px' }}>
+            <input
+              autoFocus
+              type="text"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '6px 10px',
+                border: '1px solid #2d2a24',
+                borderRadius: '8px',
+                fontSize: '13px',
+                background: '#1a1a1a',
+                color: '#f0e6d3',
+              }}
+              onBlur={() => {
+                if (newTitle) handleRenameConfirm(renameDialogId)
+                setRenameDialogId(null)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newTitle) {
+                  handleRenameConfirm(renameDialogId)
+                  setRenameDialogId(null)
+                } else if (e.key === 'Escape') {
+                  setRenameDialogId(null)
+                }
+              }}
+            />
           </div>
-          <div className="space-y-1">
-            {renameDialogId ? (
-              <div className="px-2 py-1.5">
-                <input
-                  autoFocus
-                  type="text"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full px-2 py-1 border border-gray-600 rounded text-sm bg-gray-800 text-white placeholder-gray-500"
-                  placeholder="Enter new title"
-                  onBlur={() => {
-                    if (newTitle) handleRenameConfirm(renameDialogId)
-                    setRenameDialogId(null)
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && newTitle) {
-                      handleRenameConfirm(renameDialogId)
-                      setRenameDialogId(null)
-                    } else if (e.key === 'Escape') {
-                      setRenameDialogId(null)
-                    }
-                  }}
-                />
+        ) : null}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+          {recentChats.map((chat) => (
+            renameDialogId === chat.id ? null : (
+              <RecentItem
+                key={chat.id}
+                id={chat.id}
+                title={chat.title || 'New chat'}
+                active={chat.id === activeChatId}
+                isPinned={pinnedChats.has(chat.id)}
+                onClick={() => {
+                  onSelectRecent(chat.id)
+                  handleChangeView('chats')
+                }}
+                onDelete={() => handleDelete(chat.id)}
+                onRename={() => handleRename(chat.id, chat.title || 'New chat')}
+                onShare={() => handleShare(chat.id)}
+                onPinChat={() => handlePinChat(chat.id)}
+                onArchive={() => handleArchive(chat.id)}
+                onStartGroupChat={() => handleStartGroupChat(chat.id)}
+              />
+            )
+          ))}
+        </div>
+      </div>
+
+      {/* User footer with menu popup overlay */}
+      <div style={{ position: 'relative' }}>
+        {userMenuOpen && (
+          <>
+            {/* Click-out backdrop */}
+            <div
+              style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+              onClick={() => {
+                setUserMenuOpen(false)
+                setLanguageMenuOpen(false)
+              }}
+            />
+
+            {/* Menu Popup */}
+            <div
+              ref={userMenuRef}
+              style={{
+                position: 'absolute',
+                bottom: '68px',
+                left: '12px',
+                width: '244px',
+                zIndex: 41,
+                padding: '8px',
+                borderRadius: '14px',
+                background: '#141414',
+                border: '1px solid rgba(212,175,55,0.22)',
+                boxShadow: '0 20px 32px rgba(0,0,0,0.50)',
+                animation: 'fadeUp 0.15s ease',
+              }}
+            >
+              {/* Settings */}
+              <button
+                onClick={() => {
+                  setUserMenuOpen(false)
+                  onOpenSettings?.()
+                }}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '11px', padding: '10px 12px', borderRadius: '9px', border: 'none', background: 'transparent', color: '#d8cbb0', fontSize: '13.5px', fontWeight: 500, cursor: 'pointer', textAlign: 'left' }}
+                className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+              >
+                <span style={{ display: 'flex', width: '16px', height: '16px', color: '#a89878', flexShrink: 0 }}>
+                  {gearIcon('gear')}
+                </span>
+                <span style={{ flex: 1 }}>Settings</span>
+                <span style={{ fontSize: '11px', color: '#6b6152' }}>Ctrl ⇧,</span>
+              </button>
+
+              {/* Language toggle */}
+              <button
+                onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '11px',
+                  padding: '10px 12px',
+                  borderRadius: '9px',
+                  border: 'none',
+                  background: languageMenuOpen ? '#1e1a10' : 'transparent',
+                  color: languageMenuOpen ? '#e5c76b' : '#d8cbb0',
+                  fontSize: '13.5px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+                className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+              >
+                <span style={{ display: 'flex', width: '16px', height: '16px', color: '#a89878', flexShrink: 0 }}>
+                  {gearIcon('globe')}
+                </span>
+                <span style={{ flex: 1 }}>Language</span>
+                <span style={{ color: '#6b6152', fontSize: '12px' }}>›</span>
+              </button>
+
+              {/* Other links */}
+              {['Get help', 'View all plans', 'Get apps', 'Learn more'].map((label, idx) => {
+                const iconNames = ['help', 'list', 'download', 'info']
+                return (
+                  <button
+                    key={label}
+                    onClick={() => setUserMenuOpen(false)}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '11px', padding: '10px 12px', borderRadius: '9px', border: 'none', background: 'transparent', color: '#d8cbb0', fontSize: '13.5px', fontWeight: 500, cursor: 'pointer', textAlign: 'left' }}
+                    className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+                  >
+                    <span style={{ display: 'flex', width: '16px', height: '16px', color: '#a89878', flexShrink: 0 }}>
+                      {gearIcon(iconNames[idx])}
+                    </span>
+                    <span style={{ flex: 1 }}>{label}</span>
+                  </button>
+                )
+              })}
+
+              {/* Log out */}
+              <button
+                onClick={() => {
+                  setUserMenuOpen(false)
+                  onLogout?.()
+                }}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '11px', padding: '10px 12px', borderRadius: '9px', border: 'none', background: 'transparent', color: '#d8cbb0', fontSize: '13.5px', fontWeight: 500, cursor: 'pointer', textAlign: 'left' }}
+                className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+              >
+                <span style={{ display: 'flex', width: '16px', height: '16px', color: '#a89878', flexShrink: 0 }}>
+                  {gearIcon('logout')}
+                </span>
+                <span style={{ flex: 1 }}>Log out</span>
+              </button>
+            </div>
+
+            {/* Language Flyout Submenu */}
+            {languageMenuOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '68px',
+                  left: '262px',
+                  width: '220px',
+                  maxHeight: '380px',
+                  overflowY: 'auto',
+                  zIndex: 42,
+                  padding: '6px',
+                  borderRadius: '14px',
+                  background: '#141414',
+                  border: '1px solid rgba(212,175,55,0.22)',
+                  boxShadow: '0 20px 32px rgba(0,0,0,0.50)',
+                  animation: 'fadeUp 0.15s ease',
+                }}
+              >
+                {SUPPORTED_LANGUAGE_OPTIONS.map((item) => {
+                  const active = normalizeLanguageCode(language) === item.code
+                  return (
+                    <button
+                      key={item.code}
+                      onClick={() => handleLanguageSelect(item.code)}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '10px',
+                        padding: '10px 12px',
+                        borderRadius: '9px',
+                        border: 'none',
+                        background: 'transparent',
+                        color: active ? '#e5c76b' : '#d8cbb0',
+                        fontSize: '13.5px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'all 0.12s ease',
+                      }}
+                      className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+                    >
+                      <span>{item.label}</span>
+                      {active && (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d4af37" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 6L9 17l-5-5"></path>
+                        </svg>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
-            ) : null}
-            {recentChats.map(chat => (
-              renameDialogId === chat.id ? null : (
-                <RecentItem
-                  key={chat.id}
-                  id={chat.id}
-                  title={chat.title || 'New chat'}
-                  active={chat.id === activeChatId}
-                  isPinned={pinnedChats.has(chat.id)}
-                  onClick={() => {
-                    onSelectRecent(chat.id)
-                    handleChangeView('chats')
-                  }}
-                  onDelete={() => handleDelete(chat.id)}
-                  onRename={() => handleRename(chat.id, chat.title || 'New chat')}
-                  onShare={() => handleShare(chat.id)}
-                  onPinChat={() => handlePinChat(chat.id)}
-                  onArchive={() => handleArchive(chat.id)}
-                  onStartGroupChat={() => handleStartGroupChat(chat.id)}
-                />
-              )
-            ))}
+            )}
+          </>
+        )}
+
+        {/* User bar element (clickable to toggle userMenuOpen) */}
+        <div
+          ref={userButtonRef}
+          onClick={() => setUserMenuOpen(!userMenuOpen)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '16px 18px',
+            borderTop: '1px solid #2d2a24',
+            background: 'rgba(10,10,10,0.4)',
+            cursor: 'pointer',
+            transition: 'background 0.15s ease',
+          }}
+          className="hover:bg-[#1a1a1a]"
+        >
+          <div
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #2a2415, #1a1a1a)',
+              border: '1.5px solid rgba(212,175,55,0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#d4af37',
+              fontWeight: 700,
+              fontSize: '15px',
+              flexShrink: 0,
+            }}
+          >
+            {initials}
           </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: '#f0e6d3' }}>{displayName}</div>
+            <div style={{ fontSize: '12px', color: '#a89878', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {displayEmail}
+            </div>
+          </div>
+          <button
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '9px',
+              border: 'none',
+              background: 'transparent',
+              color: '#a89878',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease',
+              flexShrink: 0,
+            }}
+            className="hover:bg-[#1a1a1a] hover:text-[#e5c76b]"
+          >
+            {gearIcon('gear')}
+          </button>
         </div>
       </div>
-
-      {/* Footer */}
-      <div className="p-4 border-t border-border">
-        <button
-          onClick={onLogout}
-          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-        >
-          <div className="w-7 h-7 bg-accent-100 rounded-full flex items-center justify-center">
-            <span className="text-xs font-semibold text-accent-600">{initials}</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-700">{displayName}</p>
-            <p className="text-xs text-gray-400 truncate">{displayEmail || 'Signed in'}</p>
-          </div>
-          <Settings size={16} className="text-gray-400" />
-        </button>
-      </div>
-    </div>
+    </aside>
   )
 }
 
