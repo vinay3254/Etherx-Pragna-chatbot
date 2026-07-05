@@ -25,6 +25,7 @@ const Sidebar = ({
   const [newTitle, setNewTitle] = useState('')
   const [loading, setLoading] = useState(null)
   const [error, setError] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Menu popup states
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -252,6 +253,10 @@ const Sidebar = ({
     setUserMenuOpen(false)
   }
 
+  const filteredChats = recentChats.filter((chat) =>
+    (chat.title || 'New chat').toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
   return (
     <aside style={{ width: '288px', flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'rgba(20,20,20,0.82)', borderRight: '1px solid #2d2a24', backdropFilter: 'blur(8px)', height: '100%' }}>
       
@@ -339,10 +344,29 @@ const Sidebar = ({
           minHeight: 0,
         }}
       >
+        <div style={{ padding: '0 10px 10px 10px' }}>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search chats..."
+            style={{
+              width: '100%',
+              padding: '7px 12px',
+              borderRadius: '8px',
+              border: '1px solid #2d2a24',
+              background: '#1a1a1a',
+              color: '#f0e6d3',
+              fontSize: '13px',
+            }}
+            className="focus-ring"
+          />
+        </div>
+
         <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: '#a89878', padding: '0 14px 10px 14px' }}>
           RECENTS
         </div>
-        
+
         {renameDialogId ? (
           <div style={{ padding: '6px 14px' }}>
             <input
@@ -376,7 +400,7 @@ const Sidebar = ({
         ) : null}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-          {recentChats.map((chat) => (
+          {filteredChats.map((chat) => (
             renameDialogId === chat.id ? null : (
               <RecentItem
                 key={chat.id}
