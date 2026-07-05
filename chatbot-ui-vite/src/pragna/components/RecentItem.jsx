@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { MoreVertical, Share, Users, Edit2, Pin, Archive, Trash2 } from 'lucide-react'
+import { MoreVertical, Share, Users, Edit2, Pin, Archive, Trash2, Download } from 'lucide-react'
 
 const RecentItem = ({
   id,
@@ -8,6 +8,7 @@ const RecentItem = ({
   onDelete,
   onRename,
   onShare,
+  onExport,
   onPinChat,
   onArchive,
   onStartGroupChat,
@@ -155,6 +156,28 @@ const RecentItem = ({
           >
             <Share size={14} />
             <span>Share</span>
+          </button>
+
+          <button
+            onClick={(e) => handleMenuClick(e, onExport)}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 10px',
+              borderRadius: '7px',
+              border: 'none',
+              background: 'transparent',
+              color: '#d8cbb0',
+              fontSize: '13px',
+              cursor: 'pointer',
+              textAlign: 'left',
+            }}
+            className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+          >
+            <Download size={14} />
+            <span>Export</span>
           </button>
 
           <button

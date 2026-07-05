@@ -112,6 +112,35 @@ const Sidebar = ({
     }
   }
 
+  const handleExport = (chatId) => {
+    const targetChat = recentChats.find((c) => c.id === chatId)
+    if (!targetChat) return
+
+    const title = targetChat.title || 'New chat'
+    const lines = [`# ${title}`, '', `_Exported ${new Date().toISOString()}_`, '', '---', '']
+
+    for (const msg of targetChat.messages || []) {
+      const speaker = msg.sender === 'bot' ? 'Pragna' : 'You'
+      lines.push(`**${speaker}:** ${msg.text || ''}`)
+      if (msg.attachments?.length) {
+        for (const att of msg.attachments) {
+          lines.push(`_[attached: ${att.name}]_`)
+        }
+      }
+      lines.push('')
+    }
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${title.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'chat'}.md`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   const handleStartGroupChat = async (chatId) => {
     try {
       setLoading('group')
@@ -415,6 +444,7 @@ const Sidebar = ({
                 onDelete={() => handleDelete(chat.id)}
                 onRename={() => handleRename(chat.id, chat.title || 'New chat')}
                 onShare={() => handleShare(chat.id)}
+                onExport={() => handleExport(chat.id)}
                 onPinChat={() => handlePinChat(chat.id)}
                 onArchive={() => handleArchive(chat.id)}
                 onStartGroupChat={() => handleStartGroupChat(chat.id)}
