@@ -23,6 +23,11 @@ const RetryIcon = () => (
     <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
   </svg>
 );
+const PencilIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z" />
+  </svg>
+);
 const VoiceIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -311,10 +316,12 @@ const renderAttachments = (attachments) => (
   </div>
 );
 
-export default function MessageBubble({ message, language = "en", onRetry }) {
+export default function MessageBubble({ message, language = "en", onRetry, onEdit, isLoading }) {
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftText, setDraftText] = useState(message.text || "");
 
   const copyToClipboard = () => {
     navigator.clipboard?.writeText(message.text);
@@ -449,19 +456,92 @@ export default function MessageBubble({ message, language = "en", onRetry }) {
 
   // ── User message: gold-gradient bubble ─────────────────────────────────
   if (!isBot) {
+    const handleEditSave = () => {
+      const trimmed = draftText.trim();
+      if (!trimmed) return;
+      setIsEditing(false);
+      onEdit?.(trimmed);
+    };
+
+    const handleEditCancel = () => {
+      setDraftText(message.text || "");
+      setIsEditing(false);
+    };
+
     return (
-      <div className="flex flex-col items-end animate-[fadeUp_0.3s_ease]">
-        <div
-          className="max-w-[78%] rounded-[18px_18px_4px_18px] px-[18px] py-3 text-[15px] leading-[1.5] shadow-premium-md whitespace-pre-wrap break-words"
-          style={{
-            background: "linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold))",
-            color: "var(--pragna-on-gold)",
-            fontWeight: 550,
-          }}
-        >
-          {hasAttachments && renderAttachments(message.attachments)}
-          {message.text}
-        </div>
+      <div className="flex flex-col items-end gap-1.5 group animate-[fadeUp_0.3s_ease]">
+        {isEditing ? (
+          <div className="max-w-[78%] w-full flex flex-col gap-2">
+            <textarea
+              autoFocus
+              value={draftText}
+              onChange={(e) => setDraftText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleEditSave();
+                } else if (e.key === "Escape") {
+                  handleEditCancel();
+                }
+              }}
+              rows={Math.min(8, Math.max(2, draftText.split("\n").length))}
+              className="w-full rounded-[14px] px-[18px] py-3 text-[15px] leading-[1.5] resize-none"
+              style={{
+                background: "var(--pragna-surface)",
+                border: "1px solid rgba(212,175,55,0.35)",
+                color: "var(--pragna-text)",
+              }}
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={handleEditCancel}
+                className="rounded-lg px-3 py-1.5 text-[13px] font-semibold"
+                style={{ color: "var(--pragna-text-muted)" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleEditSave}
+                className="rounded-lg px-3 py-1.5 text-[13px] font-semibold"
+                style={{
+                  background: "linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold))",
+                  color: "var(--pragna-on-gold)",
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div
+              className="max-w-[78%] rounded-[18px_18px_4px_18px] px-[18px] py-3 text-[15px] leading-[1.5] shadow-premium-md whitespace-pre-wrap break-words"
+              style={{
+                background: "linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold))",
+                color: "var(--pragna-on-gold)",
+                fontWeight: 550,
+              }}
+            >
+              {hasAttachments && renderAttachments(message.attachments)}
+              {message.text}
+            </div>
+            {onEdit && !isLoading && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDraftText(message.text || "");
+                  setIsEditing(true);
+                }}
+                title="Edit message"
+                className={`${actionBtnBase} opacity-0 group-hover:opacity-100 text-[color:var(--pragna-text-muted)]`}
+              >
+                <PencilIcon />
+              </button>
+            )}
+          </>
+        )}
       </div>
     );
   }

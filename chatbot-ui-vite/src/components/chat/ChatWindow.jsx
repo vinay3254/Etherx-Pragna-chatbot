@@ -75,15 +75,13 @@ export default function ChatWindow() {
       currentChat = newChatObj;
     }
 
-    const updatedMessages = [
-      ...currentChat.messages,
-      { sender: "user", text: suggestion, attachments: [] },
-    ];
     const botMsg = { sender: "bot", text: "", isStreaming: true };
 
     setChats((prev) =>
       prev.map((c) =>
-        c.id === targetChatId ? { ...c, messages: [...updatedMessages, botMsg] } : c
+        c.id === targetChatId
+          ? { ...c, messages: [...c.messages, { sender: "user", text: suggestion, attachments: [] }, botMsg] }
+          : c
       )
     );
     setIsLoading(true);
@@ -197,6 +195,20 @@ export default function ChatWindow() {
     );
     sendSuggestionMessage(userMsg.text);
   }, [chat, activeChatId, isLoading, setChats, sendSuggestionMessage]);
+
+  // Edit a previously sent user message: drop it and everything after it, then resend the new text
+  const editMessage = useCallback((idx, newText) => {
+    if (isLoading) return;
+    const trimmed = (newText || "").trim();
+    if (!trimmed) return;
+    const targetChatId = activeChatId;
+    setChats((prev) =>
+      prev.map((c) =>
+        c.id === targetChatId ? { ...c, messages: c.messages.slice(0, idx) } : c
+      )
+    );
+    sendSuggestionMessage(trimmed);
+  }, [activeChatId, isLoading, setChats, sendSuggestionMessage]);
 
   // Mode select handler
   const handleSelectMode = (label) => {
@@ -432,6 +444,8 @@ export default function ChatWindow() {
               message={m}
               language={language}
               onRetry={idx === chat.messages.length - 1 ? () => retryMessage(idx) : undefined}
+              onEdit={m.sender !== "bot" ? (newText) => editMessage(idx, newText) : undefined}
+              isLoading={isLoading}
             />
           ))}
         </div>
