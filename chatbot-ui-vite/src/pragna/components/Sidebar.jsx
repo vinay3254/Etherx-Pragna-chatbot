@@ -19,7 +19,7 @@ const Sidebar = ({
   onClose,
   onOpenSettings,
 }) => {
-  const { language, setLanguage, folders, createFolder, renameFolder, deleteFolder, moveChatToFolder, sidebarSearchInputRef } = useContext(ChatContext)
+  const { language, setLanguage, folders, createFolder, renameFolder, deleteFolder, moveChatToFolder, sidebarSearchInputRef, duplicateChat } = useContext(ChatContext)
 
   const [pinnedChats, setPinnedChats] = useState(new Set())
   const [renameDialogId, setRenameDialogId] = useState(null)
@@ -145,6 +145,11 @@ const Sidebar = ({
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
+  }
+
+  const handleDuplicate = (chatId) => {
+    duplicateChat(chatId)
+    handleChangeView('chats')
   }
 
   const handleStartGroupChat = async (chatId) => {
@@ -589,6 +594,7 @@ const Sidebar = ({
                       onRename={() => handleRename(chat.id, chat.title || 'New chat')}
                       onShare={() => handleShare(chat.id)}
                       onExport={() => handleExport(chat.id)}
+                      onDuplicate={() => handleDuplicate(chat.id)}
                       onPinChat={() => handlePinChat(chat.id)}
                       onArchive={() => handleArchive(chat.id)}
                       onStartGroupChat={() => handleStartGroupChat(chat.id)}
@@ -665,6 +671,7 @@ const Sidebar = ({
                   onRename={() => handleRename(chat.id, chat.title || 'New chat')}
                   onShare={() => handleShare(chat.id)}
                   onExport={() => handleExport(chat.id)}
+                  onDuplicate={() => handleDuplicate(chat.id)}
                   onPinChat={() => handlePinChat(chat.id)}
                   onArchive={() => handleArchive(chat.id)}
                   onStartGroupChat={() => handleStartGroupChat(chat.id)}

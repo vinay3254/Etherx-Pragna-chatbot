@@ -160,6 +160,19 @@ export function ChatProvider({ children }) {
     );
   };
 
+  const duplicateChat = (chatId) => {
+    const source = chats.find((c) => c.id === chatId);
+    if (!source) return;
+    const copy = {
+      id: Date.now().toString(),
+      title: `${source.title || "New chat"} (copy)`,
+      messages: JSON.parse(JSON.stringify(source.messages || [])),
+      folderId: source.folderId || null,
+    };
+    setChats((prev) => [copy, ...prev]);
+    setActiveChatId(copy.id);
+  };
+
   return (
     <ChatContext.Provider
       value={{
@@ -185,6 +198,7 @@ export function ChatProvider({ children }) {
         renameFolder,
         deleteFolder,
         moveChatToFolder,
+        duplicateChat,
         chatMode,
         setChatMode,
         inputRef,
