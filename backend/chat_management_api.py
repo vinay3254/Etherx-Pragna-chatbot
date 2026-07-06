@@ -21,8 +21,23 @@ def validate_chat_ownership(chat_id, user_id):
     c = conn.cursor()
     c.execute('SELECT user_id FROM conversations WHERE id = ?', (chat_id,))
     result = c.fetchone()
+    if not result:
+        # Conversation does not exist in backend database yet (local-first design).
+        # We auto-create it for the current logged-in user so they own it.
+        try:
+            c.execute('''
+                INSERT INTO conversations (id, user_id, title)
+                VALUES (?, ?, ?)
+            ''', (chat_id, user_id, "New Chat"))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            logger.error(f"Error auto-inserting conversation: {e}")
+            conn.close()
+            return False
     conn.close()
-    return result and result[0] == user_id
+    return result[0] == user_id
 
 
 @chat_management_bp.route('/<chat_id>/rename', methods=['PATCH'])

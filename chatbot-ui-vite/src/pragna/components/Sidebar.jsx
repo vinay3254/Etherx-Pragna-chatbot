@@ -227,8 +227,8 @@ const Sidebar = ({
   }
 
   const navIcon = (name) => {
-    const c = (props) => <circle key="c" {...props} />
-    const r = (props) => <rect key={'r' + (props.x || '') + (props.y || '')} {...props} />
+    const c = ({ key, ...props }) => <circle key={key || 'c'} {...props} />
+    const r = ({ key, ...props }) => <rect key={key || ('r' + (props.x || '') + (props.y || ''))} {...props} />
     switch (name) {
       case 'chats':
         return icon(['M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'])
@@ -295,11 +295,11 @@ const Sidebar = ({
   const unfiledChats = filteredChats.filter((chat) => !chat.folderId)
 
   return (
-    <aside style={{ width: '288px', flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'rgba(20,20,20,0.82)', borderRight: '1px solid #2d2a24', backdropFilter: 'blur(8px)', height: '100%' }}>
+    <aside style={{ width: '340px', flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'rgba(20,20,20,0.82)', borderRight: '1px solid #2d2a24', backdropFilter: 'blur(8px)', height: '100%' }}>
       
       {/* Wordmark logo */}
       <div style={{ display: 'flex', alignItems: 'center', padding: '20px 20px 16px 20px' }}>
-        <img src={pragnaLogo} alt="Pragna I-A" style={{ height: '150px', width: 'auto', objectFit: 'contain' }} />
+        <img src={pragnaLogo} alt="Pragna I-A" style={{ height: '150px', width: '300px', objectFit: 'cover' }} />
       </div>
 
       {/* New chat button */}

@@ -52,8 +52,8 @@
 
 .sidebar-logo img {
   height: 150px;
-  width: auto;
-  object-fit: contain;
+  width: 300px;
+  object-fit: cover;
 }
 
 

@@ -246,13 +246,14 @@ body {
 }
 
 .header-logo {
-  height: 130px;
-  width: auto;
-  object-fit: contain;
+  height: 150px;
+  width: 300px;
+  object-fit: cover;
 }
 
 .header-logo-full {
-  max-height: 130px;
+  max-height: 150px;
+  max-width: 300px;
 }
 
 /* RIGHT SIDE */

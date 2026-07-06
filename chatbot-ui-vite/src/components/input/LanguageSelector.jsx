@@ -15,7 +15,11 @@ export default function LanguageSelector() {
         title="Language"
       >
         {SUPPORTED_LANGUAGE_OPTIONS.map((item) => (
-          <option key={item.code} value={item.code}>
+          <option 
+            key={item.code} 
+            value={item.code} 
+            style={{ backgroundColor: "#1e1e1e", color: "#ffffff" }}
+          >
             {item.label}
           </option>
         ))}
