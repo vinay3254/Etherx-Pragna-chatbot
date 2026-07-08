@@ -147,6 +147,55 @@ const Sidebar = ({
     URL.revokeObjectURL(url)
   }
 
+  const handlePdfExport = (chatId) => {
+    const targetChat = recentChats.find((c) => c.id === chatId)
+    if (!targetChat) return
+
+    const title = targetChat.title || 'New chat'
+    const escapeHtml = (str) =>
+      (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+    const turns = (targetChat.messages || [])
+      .map((msg) => {
+        const speaker = msg.sender === 'bot' ? 'Pragna' : 'You'
+        let html = `<p><strong>${speaker}:</strong> ${escapeHtml(msg.text)}</p>`
+        if (msg.attachments?.length) {
+          for (const att of msg.attachments) {
+            html += `<p><em>[attached: ${escapeHtml(att.name)}]</em></p>`
+          }
+        }
+        return html
+      })
+      .join('\n')
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>${escapeHtml(title)}</title>
+<style>
+  body { font-family: Georgia, serif; max-width: 720px; margin: 40px auto; color: #1a1a1a; }
+  h1 { font-size: 22px; }
+  .meta { color: #666; font-size: 13px; margin-bottom: 24px; }
+  hr { border: none; border-top: 1px solid #ccc; margin: 24px 0; }
+  p { line-height: 1.6; }
+</style>
+</head>
+<body>
+<h1>${escapeHtml(title)}</h1>
+<div class="meta">Exported ${new Date().toISOString()}</div>
+<hr>
+${turns}
+</body>
+</html>`
+
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+    printWindow.document.write(html)
+    printWindow.document.close()
+    printWindow.onload = () => printWindow.print()
+  }
+
   const handleDuplicate = (chatId) => {
     duplicateChat(chatId)
     handleChangeView('chats')
@@ -605,6 +654,7 @@ const Sidebar = ({
                       onRename={() => handleRename(chat.id, chat.title || 'New chat')}
                       onShare={() => handleShare(chat.id)}
                       onExport={() => handleExport(chat.id)}
+                      onPdfExport={() => handlePdfExport(chat.id)}
                       onDuplicate={() => handleDuplicate(chat.id)}
                       onPinChat={() => handlePinChat(chat.id)}
                       onArchive={() => handleArchive(chat.id)}
@@ -682,6 +732,7 @@ const Sidebar = ({
                   onRename={() => handleRename(chat.id, chat.title || 'New chat')}
                   onShare={() => handleShare(chat.id)}
                   onExport={() => handleExport(chat.id)}
+                  onPdfExport={() => handlePdfExport(chat.id)}
                   onDuplicate={() => handleDuplicate(chat.id)}
                   onPinChat={() => handlePinChat(chat.id)}
                   onArchive={() => handleArchive(chat.id)}
