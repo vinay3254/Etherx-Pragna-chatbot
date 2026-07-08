@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from 'react'
 import { ChatContext } from '../../context/ChatContext'
+import { getModelsCatalog } from '../../api/api'
 
 const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
   const [activeTab, setActiveTab] = useState('General')
@@ -17,6 +18,9 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
   const [searchChats, setSearchChats] = useState(true)
   const [genMemory, setGenMemory] = useState(true)
   const [toolAccessMode, setToolAccessMode] = useState('Load tools when needed')
+  const [modelProfile, setModelProfile] = useState(() => localStorage.getItem('pragna_model_profile') || 'basic')
+  const [modelCatalog, setModelCatalog] = useState(null)
+  const [modelCatalogLoading, setModelCatalogLoading] = useState(false)
 
   useEffect(() => {
     if (!isOpen) return
@@ -26,6 +30,20 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [isOpen, onClose])
+
+  useEffect(() => {
+    if (!isOpen || activeTab !== 'Model' || modelCatalog) return
+    setModelCatalogLoading(true)
+    getModelsCatalog()
+      .then((data) => setModelCatalog(data))
+      .catch((err) => console.warn('Models catalog unavailable:', err))
+      .finally(() => setModelCatalogLoading(false))
+  }, [isOpen, activeTab, modelCatalog])
+
+  const handleModelProfileChange = (profile) => {
+    setModelProfile(profile)
+    localStorage.setItem('pragna_model_profile', profile)
+  }
 
   if (!isOpen) return null
 
@@ -87,6 +105,7 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
     { label: 'Privacy', icon: 'shield' },
     { label: 'Billing', icon: 'card' },
     { label: 'Usage', icon: 'chart' },
+    { label: 'Model', icon: 'puzzle' },
     { label: 'Capabilities', icon: 'puzzle' },
     { label: 'Connectors', icon: 'puzzle' },
     { label: 'Pragna Code', icon: 'code' },
@@ -482,6 +501,67 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
                   <span style={{ position: 'absolute', top: '2px', left: usageCredits ? '20px' : '2px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left 0.15s ease' }}></span>
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* MODEL TAB */}
+          {activeTab === 'Model' && (
+            <div style={{ animation: 'fadeUp 0.15s ease' }}>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: 700, color: '#f0e6d3' }}>Model</h2>
+              <p style={{ margin: '0 0 26px 0', fontSize: '13.5px', color: '#a89878', lineHeight: 1.6 }}>Choose how much model power Pragna uses for new messages.</p>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '22px' }}>
+                <div style={{ fontSize: '13px', color: '#a89878', width: '110px', flexShrink: 0 }}>Profile</div>
+                <div style={{ display: 'flex', gap: '4px', padding: '4px', borderRadius: '11px', background: '#1a1a1a', border: '1px solid #2d2a24' }}>
+                  {['basic', 'pro'].map((profile) => {
+                    const active = modelProfile === profile
+                    return (
+                      <button
+                        key={profile}
+                        onClick={() => handleModelProfileChange(profile)}
+                        style={{
+                          padding: '8px 18px',
+                          borderRadius: '8px',
+                          border: 'none',
+                          background: active ? 'rgba(212,175,55,0.18)' : 'transparent',
+                          color: active ? '#e5c76b' : '#a89878',
+                          fontSize: '13px',
+                          fontWeight: active ? 650 : 500,
+                          cursor: 'pointer',
+                          textTransform: 'capitalize',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {profile}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {modelCatalogLoading && (
+                <div style={{ fontSize: '13px', color: '#a89878' }}>Loading model catalog…</div>
+              )}
+
+              {modelCatalog && (
+                <>
+                  <div style={{ height: '1px', background: '#2d2a24', margin: '22px 0' }}></div>
+                  <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: 700, color: '#f0e6d3' }}>Server default</h3>
+                  <div style={{ fontSize: '13px', color: '#d8cbb0', marginBottom: '18px' }}>{modelCatalog.default_model_key}</div>
+
+                  <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: 700, color: '#f0e6d3' }}>Available models</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {(modelCatalog.models || []).map((model) => (
+                      <div
+                        key={model.key || model.name || JSON.stringify(model)}
+                        style={{ padding: '10px 14px', borderRadius: '10px', border: '1px solid #2d2a24', background: '#1a1a1a', fontSize: '13px', color: '#d8cbb0' }}
+                      >
+                        {model.key || model.name || JSON.stringify(model)}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )}
 

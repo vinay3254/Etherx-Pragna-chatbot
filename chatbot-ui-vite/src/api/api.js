@@ -230,6 +230,14 @@ export const disableRagScheduler = async () => {
   return response.json();
 };
 
+export const getModelsCatalog = async () => {
+  const response = await fetch("/api/models/catalog");
+  if (!response.ok) {
+    throw new Error("Failed to fetch models catalog.");
+  }
+  return response.json();
+};
+
 export const generateAIImage = async ({ prompt, style = "cinematic", quality = "hd", size = "1024x1024" }) => {
   let response;
   try {
