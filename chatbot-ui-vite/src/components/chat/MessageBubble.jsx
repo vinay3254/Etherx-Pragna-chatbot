@@ -639,17 +639,24 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
               </button>
               {sourcesExpanded && (
                 <ul className="mt-1.5 flex flex-col gap-1 pl-4 list-disc">
-                  {message.sources.map((src, idx) => (
-                    <li key={idx} className="text-[color:var(--pragna-text-muted)]">
-                      {src.source ? (
-                        <a href={src.source} target="_blank" rel="noopener noreferrer" className="text-accent-400 hover:underline">
-                          {src.title || src.source}
-                        </a>
-                      ) : (
-                        <span>{src.title || "Untitled source"}</span>
-                      )}
-                    </li>
-                  ))}
+                  {message.sources.map((src, idx) => {
+                    const href = src.link && /^https?:\/\//.test(src.link) ? src.link : null;
+                    const label = src.title || href || "Untitled source";
+                    return (
+                      <li key={idx} className="text-[color:var(--pragna-text-muted)]">
+                        {href ? (
+                          <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent-400 hover:underline">
+                            {label}
+                          </a>
+                        ) : (
+                          <span>{label}</span>
+                        )}
+                        {src.source && !/^https?:\/\//.test(src.source) && (
+                          <span className="ml-1.5 text-[11px] opacity-70">({src.source})</span>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
