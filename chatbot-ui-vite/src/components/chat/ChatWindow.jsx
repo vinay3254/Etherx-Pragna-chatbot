@@ -1,6 +1,6 @@
 import { useContext, useCallback, useState, useEffect } from "react";
 import { ChatContext } from "../../context/ChatContext";
-import { generateAIImage, sendOrchestratedMessage } from "../../api/api";
+import { generateAIImage, sendOrchestratedMessageStream } from "../../api/api";
 import MessageBubble from "./MessageBubble";
 import { normalizeLanguageCode } from "../../utils/language";
 
@@ -124,33 +124,59 @@ export default function ChatWindow() {
         return;
       }
 
-      const data = await sendOrchestratedMessage(
-        suggestion,
-        normalizeLanguageCode(language),
-        targetChatId,
-        chatMode
-      );
-      setIsLoading(false);
+      let sawResponse = false;
+      await sendOrchestratedMessageStream({
+        text: suggestion,
+        language: normalizeLanguageCode(language),
+        user_id: targetChatId,
+        chatMode,
+        onChunk: (chunk) => {
+          sawResponse = true;
+          setChats((prev) =>
+            prev.map((c) =>
+              c.id === targetChatId
+                ? {
+                    ...c,
+                    messages: c.messages.map((m, idx) =>
+                      idx === c.messages.length - 1 ? { ...m, text: (m.text || "") + chunk } : m
+                    ),
+                  }
+                : c
+            )
+          );
+        },
+        onSources: (sources) => {
+          setChats((prev) =>
+            prev.map((c) =>
+              c.id === targetChatId
+                ? {
+                    ...c,
+                    messages: c.messages.map((m, idx) =>
+                      idx === c.messages.length - 1 ? { ...m, sources } : m
+                    ),
+                  }
+                : c
+            )
+          );
+        },
+        onDone: () => {
+          setIsLoading(false);
+          setChats((prev) =>
+            prev.map((c) =>
+              c.id === targetChatId
+                ? {
+                    ...c,
+                    messages: c.messages.map((m, idx) =>
+                      idx === c.messages.length - 1 ? { ...m, isStreaming: false } : m
+                    ),
+                  }
+                : c
+            )
+          );
+        },
+      });
 
-      if (data && data.response) {
-        const responseText = data.response;
-        const sources = data.web_search_sources || [];
-
-        setChats((prev) =>
-          prev.map((c) =>
-            c.id === targetChatId
-              ? {
-                  ...c,
-                  messages: c.messages.map((m, idx) =>
-                    idx === c.messages.length - 1
-                      ? { ...m, text: responseText, isStreaming: false, sources }
-                      : m
-                  ),
-                }
-              : c
-          )
-        );
-      } else {
+      if (!sawResponse) {
         throw new Error("Invalid response from server");
       }
     } catch (err) {
