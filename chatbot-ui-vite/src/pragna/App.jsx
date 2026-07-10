@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { ChatContext } from '../context/ChatContext'
-import { generateAIImage, sendOrchestratedMessage } from '../api/api'
+import { generateAIImage, sendOrchestratedMessageStream } from '../api/api'
 import { normalizeLanguageCode } from '../utils/language'
 import MainLayout from './layouts/MainLayout'
 import HomePage from './pages/HomePage'
@@ -127,33 +127,59 @@ function App({ onLogout, userProfile }) {
         return
       }
 
-      const data = await sendOrchestratedMessage(
-        prompt,
-        normalizeLanguageCode(language),
-        targetChatId,
-        chatMode
-      )
-      setIsLoading(false)
-
-      if (data && data.response) {
-        const responseText = data.response
-        const sources = data.web_search_sources || []
-
-        setChats((prev) =>
-          prev.map((c) =>
-            c.id === targetChatId
-              ? {
-                  ...c,
-                  messages: c.messages.map((m, idx) =>
-                    idx === c.messages.length - 1
-                      ? { ...m, text: responseText, isStreaming: false, sources }
-                      : m
-                  ),
-                }
-              : c
+      let sawResponse = false
+      await sendOrchestratedMessageStream({
+        text: prompt,
+        language: normalizeLanguageCode(language),
+        user_id: targetChatId,
+        chatMode,
+        onChunk: (chunk) => {
+          sawResponse = true
+          setChats((prev) =>
+            prev.map((c) =>
+              c.id === targetChatId
+                ? {
+                    ...c,
+                    messages: c.messages.map((m, idx) =>
+                      idx === c.messages.length - 1 ? { ...m, text: (m.text || '') + chunk } : m
+                    ),
+                  }
+                : c
+            )
           )
-        )
-      } else {
+        },
+        onSources: (sources) => {
+          setChats((prev) =>
+            prev.map((c) =>
+              c.id === targetChatId
+                ? {
+                    ...c,
+                    messages: c.messages.map((m, idx) =>
+                      idx === c.messages.length - 1 ? { ...m, sources } : m
+                    ),
+                  }
+                : c
+            )
+          )
+        },
+        onDone: () => {
+          setIsLoading(false)
+          setChats((prev) =>
+            prev.map((c) =>
+              c.id === targetChatId
+                ? {
+                    ...c,
+                    messages: c.messages.map((m, idx) =>
+                      idx === c.messages.length - 1 ? { ...m, isStreaming: false } : m
+                    ),
+                  }
+                : c
+            )
+          )
+        },
+      })
+
+      if (!sawResponse) {
         throw new Error('Invalid response from server')
       }
     } catch (err) {
