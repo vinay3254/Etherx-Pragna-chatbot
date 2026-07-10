@@ -1,6 +1,6 @@
 import { useContext, useState, useRef, useCallback, useEffect } from "react";
 import { ChatContext } from "../../context/ChatContext";
-import { generateAIImage, sendOrchestratedMessage, sendOrchestratedUploadMessage } from "../../api/api";
+import { generateAIImage, sendOrchestratedMessage, sendOrchestratedMessageStream, sendOrchestratedUploadMessage } from "../../api/api";
 import { normalizeLanguageCode } from "../../utils/language";
 import LanguageSelector from "./LanguageSelector";
 
@@ -215,8 +215,8 @@ export default function InputBar() {
         return;
       }
 
-      let data;
       if (msgAttachments.length > 0) {
+        let data;
         try {
           data = await sendOrchestratedUploadMessage(
             msgText.trim(),
@@ -230,31 +230,85 @@ export default function InputBar() {
           const fallbackText = `${fullText}\n[Note: Attachment parsing endpoint unavailable.]`;
           data = await sendOrchestratedMessage(fallbackText, normalizedLanguage, targetChatId, chatMode);
         }
-      } else {
-        data = await sendOrchestratedMessage(fullText, normalizedLanguage, targetChatId, chatMode);
-      }
-      setIsLoading(false);
+        setIsLoading(false);
 
-      if (data && data.response) {
-        const responseText = data.response;
-        const sources = data.web_search_sources || [];
+        if (data && data.response) {
+          const responseText = data.response;
+          const sources = data.web_search_sources || [];
 
-        setChats((prev) =>
-          prev.map((c) =>
-            c.id === targetChatId
-              ? {
-                  ...c,
-                  messages: c.messages.map((m, idx) =>
-                    idx === c.messages.length - 1
-                      ? { ...m, text: responseText, isStreaming: false, sources }
-                      : m
-                  ),
-                }
-              : c
-          )
-        );
+          setChats((prev) =>
+            prev.map((c) =>
+              c.id === targetChatId
+                ? {
+                    ...c,
+                    messages: c.messages.map((m, idx) =>
+                      idx === c.messages.length - 1
+                        ? { ...m, text: responseText, isStreaming: false, sources }
+                        : m
+                    ),
+                  }
+                : c
+            )
+          );
+        } else {
+          throw new Error("Invalid response from server");
+        }
       } else {
-        throw new Error("Invalid response from server");
+        let sawResponse = false;
+        await sendOrchestratedMessageStream({
+          text: fullText,
+          language: normalizedLanguage,
+          user_id: targetChatId,
+          chatMode,
+          onChunk: (chunk) => {
+            sawResponse = true;
+            setChats((prev) =>
+              prev.map((c) =>
+                c.id === targetChatId
+                  ? {
+                      ...c,
+                      messages: c.messages.map((m, idx) =>
+                        idx === c.messages.length - 1 ? { ...m, text: (m.text || "") + chunk } : m
+                      ),
+                    }
+                  : c
+              )
+            );
+          },
+          onSources: (sources) => {
+            setChats((prev) =>
+              prev.map((c) =>
+                c.id === targetChatId
+                  ? {
+                      ...c,
+                      messages: c.messages.map((m, idx) =>
+                        idx === c.messages.length - 1 ? { ...m, sources } : m
+                      ),
+                    }
+                  : c
+              )
+            );
+          },
+          onDone: () => {
+            setIsLoading(false);
+            setChats((prev) =>
+              prev.map((c) =>
+                c.id === targetChatId
+                  ? {
+                      ...c,
+                      messages: c.messages.map((m, idx) =>
+                        idx === c.messages.length - 1 ? { ...m, isStreaming: false } : m
+                      ),
+                    }
+                  : c
+              )
+            );
+          },
+        });
+
+        if (!sawResponse) {
+          throw new Error("Invalid response from server");
+        }
       }
     } catch (err) {
       console.error("API error:", err);
