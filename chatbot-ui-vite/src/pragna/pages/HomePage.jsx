@@ -1,7 +1,12 @@
-import { useState } from 'react'
+import { useContext, useState } from 'react'
+import { ChatContext } from '../../context/ChatContext'
 
 const HomePage = ({ onUsePrompt, userProfile }) => {
   const [tier, setTier] = useState('Basic')
+  const { templates, createTemplate, deleteTemplate } = useContext(ChatContext)
+  const [addingTemplate, setAddingTemplate] = useState(false)
+  const [newTemplateTitle, setNewTemplateTitle] = useState('')
+  const [newTemplatePrompt, setNewTemplatePrompt] = useState('')
 
   const userName = userProfile?.username || localStorage.getItem('authUsername') || 'vianan'
 
@@ -118,6 +123,126 @@ const HomePage = ({ onUsePrompt, userProfile }) => {
             </button>
           )
         })}
+      </div>
+
+      {/* Your templates */}
+      <div style={{ marginTop: '34px', width: '100%', maxWidth: 'min(90vw, 820px)' }}>
+        <div style={{ fontSize: '13px', fontWeight: 650, letterSpacing: '1px', color: '#a89878', textTransform: 'uppercase', marginBottom: '14px' }}>
+          Your templates
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 260px))', gap: '16px' }}>
+          {templates.map((tpl) => (
+            <button
+              key={tpl.id}
+              onClick={() => onUsePrompt(tpl.prompt)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                gap: '10px',
+                padding: '22px',
+                borderRadius: '18px',
+                textAlign: 'left',
+                cursor: 'pointer',
+                background: 'rgba(20,20,20,0.82)',
+                border: '1px solid rgba(212,175,55,0.18)',
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.28)',
+                transition: 'all 0.18s ease',
+                position: 'relative',
+              }}
+              className="hover:translate-y-[-3px] hover:shadow-[0_20px_32px_rgba(0,0,0,0.50)] hover:border-accent-500/50"
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  deleteTemplate(tpl.id)
+                }}
+                title="Delete template"
+                style={{ position: 'absolute', top: '12px', right: '12px', width: '22px', height: '22px', borderRadius: '6px', border: 'none', background: 'transparent', color: '#a89878', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+              >
+                ✕
+              </button>
+              <span style={{ fontSize: '16px', fontWeight: 650, color: '#f0e6d3' }}>{tpl.title}</span>
+              <span style={{ fontSize: '13px', color: '#a89878', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{tpl.prompt}</span>
+            </button>
+          ))}
+
+          {addingTemplate ? (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                padding: '22px',
+                borderRadius: '18px',
+                background: 'rgba(20,20,20,0.82)',
+                border: '1px solid rgba(212,175,55,0.32)',
+              }}
+            >
+              <input
+                autoFocus
+                value={newTemplateTitle}
+                onChange={(e) => setNewTemplateTitle(e.target.value)}
+                placeholder="Template name"
+                style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #2d2a24', background: '#1a1a1a', color: '#f0e6d3', fontSize: '13.5px' }}
+              />
+              <textarea
+                value={newTemplatePrompt}
+                onChange={(e) => setNewTemplatePrompt(e.target.value)}
+                placeholder="Prompt text"
+                rows={3}
+                style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #2d2a24', background: '#1a1a1a', color: '#f0e6d3', fontSize: '13.5px', resize: 'vertical' }}
+              />
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => {
+                    setAddingTemplate(false)
+                    setNewTemplateTitle('')
+                    setNewTemplatePrompt('')
+                  }}
+                  style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', background: 'transparent', color: '#a89878', fontSize: '13px', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    createTemplate(newTemplateTitle, newTemplatePrompt)
+                    setAddingTemplate(false)
+                    setNewTemplateTitle('')
+                    setNewTemplatePrompt('')
+                  }}
+                  style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #e5c76b, #b8860b)', color: '#0a0a0a', fontSize: '13px', fontWeight: 650, cursor: 'pointer' }}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setAddingTemplate(true)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '22px',
+                borderRadius: '18px',
+                textAlign: 'center',
+                cursor: 'pointer',
+                background: 'transparent',
+                border: '1px dashed rgba(212,175,55,0.3)',
+                color: '#a89878',
+                minHeight: '110px',
+              }}
+              className="hover:border-accent-500/50 hover:text-[#e5c76b]"
+            >
+              + Add template
+            </button>
+          )}
+        </div>
       </div>
 
       <div style={{ marginTop: '34px', fontSize: '12.5px', color: '#a89878', opacity: 0.7 }}>
