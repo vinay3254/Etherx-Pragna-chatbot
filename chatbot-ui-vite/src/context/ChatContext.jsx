@@ -14,6 +14,11 @@ export function ChatProvider({ children }) {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [templates, setTemplates] = useState(() => {
+    const saved = localStorage.getItem("pragna_templates");
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [activeChatId, setActiveChatId] = useState(() => {
     const saved = localStorage.getItem("pragna_active_chat_id");
     return saved || null;
@@ -64,6 +69,10 @@ export function ChatProvider({ children }) {
   useEffect(() => {
     localStorage.setItem("pragna_folders", JSON.stringify(folders));
   }, [folders]);
+
+  useEffect(() => {
+    localStorage.setItem("pragna_templates", JSON.stringify(templates));
+  }, [templates]);
 
   // Save chat mode
   useEffect(() => {
@@ -165,6 +174,17 @@ export function ChatProvider({ children }) {
     setActiveChatId(copy.id);
   };
 
+  const createTemplate = (title, prompt) => {
+    const trimmedTitle = (title || "").trim();
+    const trimmedPrompt = (prompt || "").trim();
+    if (!trimmedTitle || !trimmedPrompt) return;
+    setTemplates((prev) => [...prev, { id: Date.now().toString(), title: trimmedTitle, prompt: trimmedPrompt }]);
+  };
+
+  const deleteTemplate = (templateId) => {
+    setTemplates((prev) => prev.filter((t) => t.id !== templateId));
+  };
+
   return (
     <ChatContext.Provider
       value={{
@@ -191,6 +211,9 @@ export function ChatProvider({ children }) {
         deleteFolder,
         moveChatToFolder,
         duplicateChat,
+        templates,
+        createTemplate,
+        deleteTemplate,
         chatMode,
         setChatMode,
         inputRef,
