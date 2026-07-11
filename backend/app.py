@@ -2062,6 +2062,71 @@ def summarize_chat():
         logger.error(f"Summarize chat error: {e}", exc_info=True)
         return jsonify({'error': 'Failed to generate summary'}), 500
 
+
+GENERATED_DOCS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'generated_docs')
+
+
+@app.route('/api/documents/generate', methods=['POST'])
+def generate_document():
+    """Generate a downloadable Word/Excel/PDF/PowerPoint document from a chat prompt."""
+    try:
+        data = request.json or {}
+        fmt = (data.get('format') or '').strip().lower()
+        prompt = (data.get('prompt') or '').strip()
+        language = _normalize_language_code(data.get('language', 'en'))
+
+        allowed_formats = {'docx', 'xlsx', 'pdf', 'pptx'}
+        if fmt not in allowed_formats:
+            return jsonify({'error': f"format must be one of {sorted(allowed_formats)}"}), 400
+        if not prompt:
+            return jsonify({'error': 'prompt is required'}), 400
+
+        from services.document_generator import (
+            generate_document_structure,
+            _build_docx,
+            _build_pdf,
+            _build_pptx,
+            _build_xlsx,
+            _sanitize_filename_component,
+        )
+
+        structure = generate_document_structure(prompt, language=language)
+        if not structure or not structure.get('sections'):
+            return jsonify({'error': 'Failed to generate document content'}), 500
+
+        os.makedirs(GENERATED_DOCS_DIR, exist_ok=True)
+
+        builders = {'docx': _build_docx, 'xlsx': _build_xlsx, 'pdf': _build_pdf, 'pptx': _build_pptx}
+        subject_slug = _sanitize_filename_component(structure.get('title') or prompt)
+        filename = f"{int(time.time())}-{subject_slug}.{fmt}"
+        filepath = os.path.join(GENERATED_DOCS_DIR, filename)
+        builders[fmt](structure, filepath)
+
+        display_name = f"{structure.get('title') or prompt}.{fmt}"
+        return jsonify({
+            'download_url': f'/api/documents/download/{filename}',
+            'filename': display_name,
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Document generation error: {e}", exc_info=True)
+        return jsonify({'error': 'Failed to generate document'}), 500
+
+
+@app.route('/api/documents/download/<path:filename>', methods=['GET'])
+def download_document(filename):
+    """Serve a previously generated document by filename."""
+    safe_name = os.path.basename(filename)
+    if safe_name != filename or safe_name in ('', '.', '..'):
+        return jsonify({'error': 'Invalid filename'}), 400
+
+    filepath = os.path.join(GENERATED_DOCS_DIR, safe_name)
+    if not os.path.isfile(filepath):
+        return jsonify({'error': 'File not found'}), 404
+
+    return send_from_directory(GENERATED_DOCS_DIR, safe_name, as_attachment=True, download_name=safe_name)
+
+
 # Register blueprints
 app.register_blueprint(chat_management_bp)
 

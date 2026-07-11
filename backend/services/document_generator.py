@@ -147,6 +147,13 @@ def _build_pptx(structure, filepath):
     prs.save(filepath)
 
 
+def _sanitize_filename_component(text):
+    """Turn arbitrary text into a short, filesystem-safe slug."""
+    cleaned = re.sub(r'[^\w\s-]', '', text or '').strip().lower()
+    cleaned = re.sub(r'[\s]+', '-', cleaned)
+    return cleaned[:60] or 'document'
+
+
 def _sanitize_sheet_name(name):
     cleaned = re.sub(r'[\[\]:*?/\\]', '', name or '').strip()
     return cleaned[:31] or "Sheet1"

@@ -105,6 +105,7 @@ build/
 # Temporary Files
 # ===================================================================
 temp/
+generated_docs/
 tmp/
 *.tmp
 .cache/
