@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { ChatContext } from '../context/ChatContext'
-import { generateAIImage, sendOrchestratedMessageStream } from '../api/api'
+import { generateAIImage, generateDocument, sendOrchestratedMessageStream } from '../api/api'
 import { normalizeLanguageCode } from '../utils/language'
 import MainLayout from './layouts/MainLayout'
 import HomePage from './pages/HomePage'
@@ -22,6 +22,26 @@ const extractImagePrompt = (text) => {
   return raw
     .replace(/^(please\s+)?(create|generate|make|design)\s+(an?\s+)?(ai\s+)?(image|picture|photo|illustration)\s+(of|for)?\s*/i, '')
     .trim() || raw
+}
+
+const DOCUMENT_VERB_RE = /\b(create|generate|make|write|draft)\b.*\b(word\s*doc(ument)?|report|excel\s*(sheet|spreadsheet)|spreadsheet|pdf|power\s*point|presentation|slides?)\b/i
+
+const DOCUMENT_FORMAT_PATTERNS = [
+  { format: 'pptx', re: /power\s*point|presentation|slides?/i },
+  { format: 'xlsx', re: /excel|spreadsheet|sheet/i },
+  { format: 'pdf', re: /\bpdf\b/i },
+  { format: 'docx', re: /word\s*doc(ument)?|\bdoc(ument)?\b|report/i },
+]
+
+const extractDocumentRequest = (text) => {
+  const raw = (text || '').trim()
+  if (!raw || !DOCUMENT_VERB_RE.test(raw)) return null
+  const match = DOCUMENT_FORMAT_PATTERNS.find((p) => p.re.test(raw))
+  if (!match) return null
+  const subject = raw
+    .replace(/^(please\s+)?(create|generate|make|write|draft)\s+(an?\s+)?(ms\s*)?(word\s*doc(ument)?|excel\s*(sheet|spreadsheet)|spreadsheet|pdf|power\s*point(\s*(presentation|deck))?|presentation|slides?|report)\s*(about|on|for|regarding)?\s*/i, '')
+    .trim() || raw
+  return { format: match.format, subject }
 }
 
 function App({ onLogout, userProfile }) {
@@ -90,6 +110,44 @@ function App({ onLogout, userProfile }) {
     setIsLoading(true)
 
     try {
+      const docRequest = extractDocumentRequest(prompt)
+      if (docRequest) {
+        const docResult = await generateDocument({
+          format: docRequest.format,
+          prompt: docRequest.subject,
+          language: normalizeLanguageCode(language),
+        })
+
+        setIsLoading(false)
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id === targetChatId
+              ? {
+                  ...c,
+                  messages: c.messages.map((m, idx) =>
+                    idx === c.messages.length - 1
+                      ? {
+                          ...m,
+                          text: 'Generated document ready.',
+                          isStreaming: false,
+                          attachments: [
+                            {
+                              name: docResult.filename,
+                              type: 'document',
+                              downloadUrl: docResult.download_url,
+                              format: docRequest.format,
+                            },
+                          ],
+                        }
+                      : m
+                  ),
+                }
+              : c
+          )
+        )
+        return
+      }
+
       if (IMAGE_REQUEST_RE.test(prompt)) {
         const imageResult = await generateAIImage({
           prompt: extractImagePrompt(prompt),
