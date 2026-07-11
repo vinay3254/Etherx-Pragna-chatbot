@@ -3,6 +3,14 @@
 """
 import re
 
+from docx import Document
+from openpyxl import Workbook
+from pptx import Presentation
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table as PdfTable, TableStyle
+
 from services.llm import generate_completion
 
 _TABLE_SEPARATOR_RE = re.compile(r'^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?$')
@@ -77,3 +85,86 @@ def generate_document_structure(prompt, language="en"):
     ]
     outline_text = generate_completion(messages, language=language)
     return _parse_markdown_outline(outline_text)
+
+
+def _build_docx(structure, filepath):
+    doc = Document()
+    doc.add_heading(structure["title"], level=0)
+    for section in structure["sections"]:
+        doc.add_heading(section["heading"], level=1)
+        if section["table"]:
+            rows = section["table"]
+            table = doc.add_table(rows=len(rows), cols=len(rows[0]))
+            table.style = "Table Grid"
+            for r, row in enumerate(rows):
+                for c, cell in enumerate(row):
+                    table.cell(r, c).text = cell
+        else:
+            for bullet in section["bullets"]:
+                doc.add_paragraph(bullet, style="List Bullet")
+    doc.save(filepath)
+
+
+def _build_pdf(structure, filepath):
+    doc = SimpleDocTemplate(filepath, pagesize=letter)
+    styles = getSampleStyleSheet()
+    story = [Paragraph(structure["title"], styles["Title"]), Spacer(1, 12)]
+    for section in structure["sections"]:
+        story.append(Paragraph(section["heading"], styles["Heading2"]))
+        story.append(Spacer(1, 6))
+        if section["table"]:
+            pdf_table = PdfTable(section["table"])
+            pdf_table.setStyle(TableStyle([
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.whitesmoke),
+            ]))
+            story.append(pdf_table)
+        else:
+            for bullet in section["bullets"]:
+                story.append(Paragraph(f"&bull; {bullet}", styles["Normal"]))
+        story.append(Spacer(1, 12))
+    doc.build(story)
+
+
+def _build_pptx(structure, filepath):
+    prs = Presentation()
+    title_slide = prs.slides.add_slide(prs.slide_layouts[0])
+    title_slide.shapes.title.text = structure["title"]
+
+    for section in structure["sections"]:
+        slide = prs.slides.add_slide(prs.slide_layouts[1])
+        slide.shapes.title.text = section["heading"]
+        body = slide.placeholders[1].text_frame
+        body.clear()
+        lines = section["bullets"] if section["bullets"] else [
+            " | ".join(row) for row in (section["table"] or [])
+        ]
+        for i, line in enumerate(lines):
+            if i == 0:
+                body.text = line
+            else:
+                body.add_paragraph().text = line
+    prs.save(filepath)
+
+
+def _sanitize_sheet_name(name):
+    cleaned = re.sub(r'[\[\]:*?/\\]', '', name or '').strip()
+    return cleaned[:31] or "Sheet1"
+
+
+def _build_xlsx(structure, filepath):
+    wb = Workbook()
+    wb.remove(wb.active)
+
+    table_section = next((s for s in structure["sections"] if s["table"]), None)
+    if table_section:
+        ws = wb.create_sheet(_sanitize_sheet_name(table_section["heading"]))
+        for row in table_section["table"]:
+            ws.append(row)
+    else:
+        ws = wb.create_sheet("Summary")
+        ws.append(["Section", "Content"])
+        for section in structure["sections"]:
+            ws.append([section["heading"], "; ".join(section["bullets"])])
+
+    wb.save(filepath)
