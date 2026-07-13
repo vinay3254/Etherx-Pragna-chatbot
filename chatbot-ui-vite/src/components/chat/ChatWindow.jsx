@@ -45,6 +45,9 @@ export default function ChatWindow() {
     setIsLoading,
     chatMode,
     setChatMode,
+    personas,
+    activePersonaId,
+    setActivePersonaId,
   } = useContext(ChatContext);
 
   const chat = chats.find((c) => c.id === activeChatId);
@@ -182,12 +185,15 @@ export default function ChatWindow() {
         return;
       }
 
+      const activePersona = personas.find((p) => p.id === activePersonaId);
+
       let sawResponse = false;
       await sendOrchestratedMessageStream({
         text: suggestion,
         language: normalizeLanguageCode(language),
         user_id: targetChatId,
         chatMode,
+        personaSystemPrompt: activePersona?.system_prompt,
         onChunk: (chunk) => {
           sawResponse = true;
           setChats((prev) =>
@@ -264,7 +270,7 @@ export default function ChatWindow() {
     } finally {
       setIsLoading(false);
     }
-  }, [activeChatId, chat, isLoading, language, setChats, setActiveChatId, setIsLoading, chatMode]);
+  }, [activeChatId, chat, isLoading, language, setChats, setActiveChatId, setIsLoading, chatMode, personas, activePersonaId]);
 
   // Retry a failed message: remove the old failed user+bot pair, then resend
   const retryMessage = useCallback((idx) => {
@@ -555,6 +561,17 @@ export default function ChatWindow() {
           <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#d4af37', boxShadow: '0 0 8px rgba(212,175,55,0.8)' }}></span>
           {modeLabel} mode
         </div>
+        <select
+          value={activePersonaId || ''}
+          onChange={(e) => setActivePersonaId(e.target.value || null)}
+          title="Persona"
+          style={{ padding: '5px 10px', borderRadius: '999px', border: '1px solid #2d2a24', background: '#1a1a1a', color: '#d8cbb0', fontFamily: 'inherit', fontSize: '12px', cursor: 'pointer' }}
+        >
+          <option value="">No persona</option>
+          {personas.map((p) => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
         <button
           onClick={handleSummarize}
           disabled={summarizing}

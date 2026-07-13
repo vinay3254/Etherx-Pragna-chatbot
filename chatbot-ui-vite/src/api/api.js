@@ -111,6 +111,7 @@ export const sendOrchestratedMessageStream = async ({
   language,
   user_id,
   chatMode = "general",
+  personaSystemPrompt,
   onChunk,
   onSources,
   onDone,
@@ -130,6 +131,7 @@ export const sendOrchestratedMessageStream = async ({
       chat_mode: chatMode,
       model_override: modelRouting.model_override,
       fallback_models: modelRouting.fallback_models,
+      ...(personaSystemPrompt ? { persona_system_prompt: personaSystemPrompt } : {}),
     }),
   });
 
