@@ -5,7 +5,12 @@ services:
     runtime: python
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --workers 2 --timeout 120
+    # Render injects $PORT at runtime and requires the service to bind to it -
+    # gunicorn defaults to 127.0.0.1:8000 otherwise, which fails Render's port
+    # check. Note config.PORT/FLASK_PORT has NO effect here: gunicorn imports
+    # the `app` WSGI callable directly, so app.py's `if __name__ == '__main__'`
+    # block (the only place that reads config.PORT) never runs.
+    startCommand: gunicorn app:app --workers 2 --timeout 120 --bind 0.0.0.0:$PORT
     envVars:
       - key: GROQ_API_KEY
         sync: false # You will set this in Render dashboard
@@ -21,8 +26,6 @@ services:
                      # (any origin) if left unset.
       - key: FLASK_DEBUG
         value: "False"
-      - key: FLASK_PORT
-        value: "10000"
       - key: PYTHON_VERSION
         value: "3.11.0"
 
