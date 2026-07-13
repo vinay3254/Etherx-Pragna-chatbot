@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useRef } from "react";
 import { normalizeLanguageCode } from "../utils/language";
+import { listPersonas } from "../api/api";
 
 export const ChatContext = createContext();
 
@@ -50,6 +51,12 @@ export function ChatProvider({ children }) {
     return localStorage.getItem("pragna_chat_mode") || "general";
   });
 
+  const [personas, setPersonas] = useState([]);
+
+  const [activePersonaId, setActivePersonaId] = useState(() => {
+    return localStorage.getItem("pragna_active_persona_id") || null;
+  });
+
   // Ref to input field for focusing when mode is selected
   const inputRef = useRef(null);
 
@@ -78,6 +85,31 @@ export function ChatProvider({ children }) {
   useEffect(() => {
     localStorage.setItem("pragna_chat_mode", chatMode);
   }, [chatMode]);
+
+  // Save active persona selection
+  useEffect(() => {
+    if (activePersonaId) {
+      localStorage.setItem("pragna_active_persona_id", activePersonaId);
+    } else {
+      localStorage.removeItem("pragna_active_persona_id");
+    }
+  }, [activePersonaId]);
+
+  const refreshPersonas = async () => {
+    try {
+      const data = await listPersonas();
+      setPersonas(data.personas || []);
+    } catch (err) {
+      console.warn("Failed to load personas:", err);
+    }
+  };
+
+  // Fetch personas once on load, only if the user is logged in (personas require auth)
+  useEffect(() => {
+    if (localStorage.getItem("authToken")) {
+      refreshPersonas();
+    }
+  }, []);
 
   useEffect(() => {
     if (activeChatId) {
@@ -216,6 +248,10 @@ export function ChatProvider({ children }) {
         deleteTemplate,
         chatMode,
         setChatMode,
+        personas,
+        activePersonaId,
+        setActivePersonaId,
+        refreshPersonas,
         inputRef,
         sidebarSearchInputRef,
       }}
