@@ -1993,6 +1993,75 @@ def get_conversations():
         logger.error(f"Error fetching conversations: {e}")
         return jsonify({'error': 'Failed to fetch conversations'}), 500
 
+@app.route('/api/personas', methods=['GET'])
+@require_auth
+def list_personas():
+    """List the current user's personas"""
+    try:
+        personas = db.list_personas(request.user_id)
+        return jsonify({'personas': personas}), 200
+    except Exception as e:
+        logger.error(f"Error listing personas: {e}")
+        return jsonify({'error': 'Failed to list personas'}), 500
+
+
+@app.route('/api/personas', methods=['POST'])
+@require_auth
+def create_persona():
+    """Create a new persona for the current user"""
+    try:
+        data = request.json or {}
+        name = (data.get('name') or '').strip()
+        system_prompt = (data.get('system_prompt') or '').strip()
+
+        if not name or not system_prompt:
+            return jsonify({'error': 'name and system_prompt are required'}), 400
+
+        persona_id = db.create_persona(request.user_id, name, system_prompt)
+        persona = db.get_persona(persona_id, request.user_id)
+        return jsonify(persona), 201
+    except Exception as e:
+        logger.error(f"Error creating persona: {e}")
+        return jsonify({'error': 'Failed to create persona'}), 500
+
+
+@app.route('/api/personas/<persona_id>', methods=['PUT'])
+@require_auth
+def update_persona(persona_id):
+    """Update one of the current user's personas"""
+    try:
+        data = request.json or {}
+        name = (data.get('name') or '').strip()
+        system_prompt = (data.get('system_prompt') or '').strip()
+
+        if not name or not system_prompt:
+            return jsonify({'error': 'name and system_prompt are required'}), 400
+
+        updated = db.update_persona(persona_id, request.user_id, name, system_prompt)
+        if not updated:
+            return jsonify({'error': 'Persona not found'}), 404
+
+        persona = db.get_persona(persona_id, request.user_id)
+        return jsonify(persona), 200
+    except Exception as e:
+        logger.error(f"Error updating persona: {e}")
+        return jsonify({'error': 'Failed to update persona'}), 500
+
+
+@app.route('/api/personas/<persona_id>', methods=['DELETE'])
+@require_auth
+def delete_persona(persona_id):
+    """Delete one of the current user's personas"""
+    try:
+        deleted = db.delete_persona(persona_id, request.user_id)
+        if not deleted:
+            return jsonify({'error': 'Persona not found'}), 404
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.error(f"Error deleting persona: {e}")
+        return jsonify({'error': 'Failed to delete persona'}), 500
+
+
 @app.route('/api/summarize', methods=['POST'])
 def summarize():
     """Generate a one-line summary for chat title"""
