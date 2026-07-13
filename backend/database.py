@@ -78,7 +78,20 @@ class Database:
                 FOREIGN KEY(user_id) REFERENCES users(id)
             )
         ''')
-        
+
+        # Personas table (custom named system prompts)
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS personas (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                system_prompt TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+        ''')
+
         conn.commit()
         conn.close()
     
@@ -227,26 +240,91 @@ class Database:
         """Get user statistics"""
         conn = self.get_connection()
         c = conn.cursor()
-        
+
         # Total tokens
         c.execute('''
             SELECT SUM(tokens_used) as total_tokens FROM api_usage
             WHERE user_id = ?
         ''', (user_id,))
         total_tokens = c.fetchone()['total_tokens'] or 0
-        
+
         # Total conversations
         c.execute('''
             SELECT COUNT(*) as count FROM conversations
             WHERE user_id = ? AND is_archived = 0
         ''', (user_id,))
         total_conversations = c.fetchone()['count']
-        
+
         conn.close()
         return {
             'total_tokens': total_tokens,
             'total_conversations': total_conversations
         }
+
+    # PERSONA MANAGEMENT
+    def create_persona(self, user_id, name, system_prompt):
+        """Create a new persona for a user"""
+        persona_id = hashlib.md5(f"{user_id}{name}{datetime.now()}".encode()).hexdigest()
+
+        conn = self.get_connection()
+        c = conn.cursor()
+        c.execute('''
+            INSERT INTO personas (id, user_id, name, system_prompt)
+            VALUES (?, ?, ?, ?)
+        ''', (persona_id, user_id, name, system_prompt))
+        conn.commit()
+        conn.close()
+        return persona_id
+
+    def list_personas(self, user_id):
+        """List all personas belonging to a user"""
+        conn = self.get_connection()
+        c = conn.cursor()
+        c.execute('''
+            SELECT * FROM personas WHERE user_id = ? ORDER BY created_at ASC
+        ''', (user_id,))
+        personas = [dict(row) for row in c.fetchall()]
+        conn.close()
+        return personas
+
+    def get_persona(self, persona_id, user_id):
+        """Get a single persona, scoped to its owner"""
+        conn = self.get_connection()
+        c = conn.cursor()
+        c.execute('''
+            SELECT * FROM personas WHERE id = ? AND user_id = ?
+        ''', (persona_id, user_id))
+        persona = c.fetchone()
+        conn.close()
+        return dict(persona) if persona else None
+
+    def update_persona(self, persona_id, user_id, name, system_prompt):
+        """Update a persona's name/system_prompt. Returns False if it doesn't belong to user_id."""
+        if not self.get_persona(persona_id, user_id):
+            return False
+
+        conn = self.get_connection()
+        c = conn.cursor()
+        c.execute('''
+            UPDATE personas
+            SET name = ?, system_prompt = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ?
+        ''', (name, system_prompt, persona_id, user_id))
+        conn.commit()
+        conn.close()
+        return True
+
+    def delete_persona(self, persona_id, user_id):
+        """Delete a persona. Returns False if it doesn't belong to user_id."""
+        if not self.get_persona(persona_id, user_id):
+            return False
+
+        conn = self.get_connection()
+        c = conn.cursor()
+        c.execute('DELETE FROM personas WHERE id = ? AND user_id = ?', (persona_id, user_id))
+        conn.commit()
+        conn.close()
+        return True
 
 # Global instance
 db = Database()
