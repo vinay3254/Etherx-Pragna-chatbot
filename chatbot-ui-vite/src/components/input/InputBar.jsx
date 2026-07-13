@@ -46,6 +46,9 @@ const SLASH_COMMANDS = [
   { name: "mode", usage: "/mode <general|explain|ideas|write|code|questions|story>", description: "Switch chat mode" },
   { name: "lang", usage: "/lang <code>", description: "Switch response language" },
   { name: "clear", usage: "/clear", description: "Start a new chat" },
+  { name: "image", usage: "/image <prompt>", description: "Generate an image" },
+  { name: "doc", usage: "/doc <docx|xlsx|pdf|pptx> <prompt>", description: "Generate a document" },
+  { name: "persona", usage: "/persona <name>", description: "Switch active persona" },
 ];
 
 const MODE_COMMAND_MAP = {
@@ -98,7 +101,7 @@ export default function InputBar() {
   const {
     chats, setChats, activeChatId, setActiveChatId,
     language, isLoading, setIsLoading, chatMode, setChatMode, inputRef,
-    personas, activePersonaId,
+    personas, activePersonaId, setActivePersonaId,
     newChat, setLanguage,
   } = useContext(ChatContext);
 
@@ -251,7 +254,94 @@ export default function InputBar() {
       newChat();
       return;
     }
-  }, [activeChatId, activeChat, language, setChats, setActiveChatId, setIsLoading, setChatMode, setLanguage, newChat]);
+
+    if (commandName === "image") {
+      if (!arg) {
+        appendBotMessage("Usage: /image <prompt>", true);
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const imageResult = await generateAIImage({ prompt: arg, style: "cinematic", quality: "hd", size: "1024x1024" });
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id === targetChatId
+              ? {
+                  ...c,
+                  messages: [
+                    ...c.messages,
+                    { sender: "user", text: rawText, attachments: [] },
+                    {
+                      sender: "bot",
+                      text: "Generated image ready.",
+                      attachments: [{ name: `generated-${Date.now()}.png`, type: "image", previewUrl: imageResult.image }],
+                    },
+                  ],
+                }
+              : c
+          )
+        );
+      } catch {
+        appendBotMessage("Image generation failed. Please try again.", true);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    if (commandName === "doc") {
+      const docSpaceIdx = arg.indexOf(" ");
+      const format = (docSpaceIdx === -1 ? arg : arg.slice(0, docSpaceIdx)).toLowerCase();
+      const prompt = (docSpaceIdx === -1 ? "" : arg.slice(docSpaceIdx + 1)).trim();
+      if (!["docx", "xlsx", "pdf", "pptx"].includes(format) || !prompt) {
+        appendBotMessage("Usage: /doc <docx|xlsx|pdf|pptx> <prompt>", true);
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const docResult = await generateDocument({ format, prompt, language: normalizeLanguageCode(language) });
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id === targetChatId
+              ? {
+                  ...c,
+                  messages: [
+                    ...c.messages,
+                    { sender: "user", text: rawText, attachments: [] },
+                    {
+                      sender: "bot",
+                      text: "Generated document ready.",
+                      attachments: [{ name: docResult.filename, type: "document", downloadUrl: docResult.download_url, format }],
+                    },
+                  ],
+                }
+              : c
+          )
+        );
+      } catch {
+        appendBotMessage("Document generation failed. Please try again.", true);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    if (commandName === "persona") {
+      if (!arg) {
+        appendBotMessage("Usage: /persona <name>", true);
+        return;
+      }
+      const match = personas.find((p) => p.name.toLowerCase() === arg.toLowerCase());
+      if (!match) {
+        const available = personas.length ? personas.map((p) => p.name).join(", ") : "none saved yet";
+        appendBotMessage(`No persona named "${arg}". Available personas: ${available}`, true);
+        return;
+      }
+      setActivePersonaId(match.id);
+      appendBotMessage(`Switched to persona "${match.name}".`);
+      return;
+    }
+  }, [activeChatId, activeChat, language, personas, setChats, setActiveChatId, setIsLoading, setChatMode, setLanguage, newChat, setActivePersonaId]);
 
   const handleSendMessage = useCallback(async (msgText, msgAttachments = []) => {
     const hasContent = msgText.trim() || msgAttachments.length > 0;
