@@ -24,7 +24,7 @@ const extractImagePrompt = (text) => {
     .trim() || raw
 }
 
-const DOCUMENT_VERB_RE = /\b(create|generate|make|write|draft)\b.*\b(word\s*doc(ument)?|report|excel\s*(sheet|spreadsheet)|spreadsheet|pdf|power\s*point|presentation|slides?)\b/i
+const DOCUMENT_VERB_RE = /\b(create|generate|make|write|draft)\b.*\b((word\s*)?doc(ument)?|report|excel\s*(sheet|spreadsheet)|spreadsheet|pdf|power\s*point|presentation|slides?)\b/i
 
 const DOCUMENT_FORMAT_PATTERNS = [
   { format: 'pptx', re: /power\s*point|presentation|slides?/i },
@@ -39,7 +39,7 @@ const extractDocumentRequest = (text) => {
   const match = DOCUMENT_FORMAT_PATTERNS.find((p) => p.re.test(raw))
   if (!match) return null
   const subject = raw
-    .replace(/^(please\s+)?(create|generate|make|write|draft)\s+(an?\s+)?(ms\s*)?(word\s*doc(ument)?|excel\s*(sheet|spreadsheet)|spreadsheet|pdf|power\s*point(\s*(presentation|deck))?|presentation|slides?|report)\s*(about|on|for|regarding)?\s*/i, '')
+    .replace(/^(please\s+)?(create|generate|make|write|draft)\s+(an?\s+)?(ms\s*)?((word\s*)?doc(ument)?|excel\s*(sheet|spreadsheet)|spreadsheet|pdf|power\s*point(\s*(presentation|deck))?|presentation|slides?|report)\s*(about|on|for|regarding)?\s*/i, '')
     .trim() || raw
   return { format: match.format, subject }
 }
