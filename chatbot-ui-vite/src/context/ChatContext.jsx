@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useRef } from "react";
+import { createContext, useState, useEffect, useRef, useCallback } from "react";
 import { normalizeLanguageCode } from "../utils/language";
 import { listPersonas } from "../api/api";
 
@@ -95,14 +95,14 @@ export function ChatProvider({ children }) {
     }
   }, [activePersonaId]);
 
-  const refreshPersonas = async () => {
+  const refreshPersonas = useCallback(async () => {
     try {
       const data = await listPersonas();
       setPersonas(data.personas || []);
     } catch (err) {
       console.warn("Failed to load personas:", err);
     }
-  };
+  }, []);
 
   // Fetch personas once on load, only if the user is logged in (personas require auth)
   useEffect(() => {

@@ -53,11 +53,7 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
     if (isOpen && activeTab === 'Personas') {
       refreshPersonas()
     }
-    // refreshPersonas is intentionally omitted below: it's re-created on every ChatProvider render
-    // (not memoized), so including it would re-trigger this effect on every fetch and cause a
-    // request loop. Only isOpen/activeTab transitions should refetch.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, activeTab])
+  }, [isOpen, activeTab, refreshPersonas])
 
   const handleModelProfileChange = (profile) => {
     setModelProfile(profile)
