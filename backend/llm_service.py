@@ -280,7 +280,10 @@ class LLMService:
             
             # ==================== CACHING LOGIC ====================
             # Check if we should cache this query
-            is_cacheable = self._is_cacheable_query(message, history)
+            # Skip caching entirely when a persona is active: the cache key is not
+            # keyed by persona, so a cached plain response could bleed into a
+            # persona request (or vice versa) with no indication persona logic ran.
+            is_cacheable = self._is_cacheable_query(message, history) and not persona_system_prompt
             cache_key = None
             
             if is_cacheable:
