@@ -357,6 +357,55 @@ export const generateDocument = async ({ format, prompt, language = "en" }) => {
   return data;
 };
 
+export const listPersonas = async () => {
+  const response = await fetch(`${API_BASE}/api/personas`, {
+    headers: _authHeaders(),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || "Failed to list personas.");
+  }
+  return data;
+};
+
+export const createPersona = async ({ name, system_prompt }) => {
+  const response = await fetch(`${API_BASE}/api/personas`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ..._authHeaders() },
+    body: JSON.stringify({ name, system_prompt }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || "Failed to create persona.");
+  }
+  return data;
+};
+
+export const updatePersona = async (id, { name, system_prompt }) => {
+  const response = await fetch(`${API_BASE}/api/personas/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ..._authHeaders() },
+    body: JSON.stringify({ name, system_prompt }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || "Failed to update persona.");
+  }
+  return data;
+};
+
+export const deletePersona = async (id) => {
+  const response = await fetch(`${API_BASE}/api/personas/${id}`, {
+    method: "DELETE",
+    headers: _authHeaders(),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || "Failed to delete persona.");
+  }
+  return data;
+};
+
 
 // ── Pragna Code Agent ────────────────────────────────────────────────────────
 
