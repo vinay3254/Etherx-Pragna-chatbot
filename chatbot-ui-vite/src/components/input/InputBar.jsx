@@ -81,6 +81,7 @@ export default function InputBar() {
   const {
     chats, setChats, activeChatId, setActiveChatId,
     language, isLoading, setIsLoading, chatMode, inputRef,
+    personas, activePersonaId,
   } = useContext(ChatContext);
 
   const activeChat = chats.find((c) => c.id === activeChatId);
@@ -313,12 +314,15 @@ export default function InputBar() {
           throw new Error("Invalid response from server");
         }
       } else {
+        const activePersona = personas.find((p) => p.id === activePersonaId);
+
         let sawResponse = false;
         await sendOrchestratedMessageStream({
           text: fullText,
           language: normalizedLanguage,
           user_id: targetChatId,
           chatMode,
+          personaSystemPrompt: activePersona?.system_prompt,
           onChunk: (chunk) => {
             sawResponse = true;
             setChats((prev) =>
@@ -394,7 +398,7 @@ export default function InputBar() {
         )
       );
     }
-  }, [activeChatId, activeChat, chats, isLoading, language, setChats, setActiveChatId, setIsLoading]);
+  }, [activeChatId, activeChat, chats, isLoading, language, setChats, setActiveChatId, setIsLoading, personas, activePersonaId]);
 
   const hasContent = text.trim() || attachments.length > 0;
 
