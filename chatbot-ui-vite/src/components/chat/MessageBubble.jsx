@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import CodeBlock from "./CodeBlock";
+import { API_BASE } from "../../api/api";
 
 const CopyIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -406,7 +407,7 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
       console.log(`Requesting speech from backend | Language: ${targetLang} | Text: ${message.text.substring(0, 50)}...`);
 
       // Fetch audio from backend
-      fetch('/api/speech', {
+      fetch(`${API_BASE}/api/speech`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

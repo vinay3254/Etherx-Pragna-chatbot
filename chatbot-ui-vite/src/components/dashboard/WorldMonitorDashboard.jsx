@@ -23,7 +23,7 @@ const WorldMonitorDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const baseURL = 'http://localhost:5001/api/intelligence';
+      const baseURL = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/intelligence`;
 
       const [
         globalRes,

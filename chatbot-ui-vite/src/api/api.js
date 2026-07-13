@@ -1,8 +1,15 @@
 import axios from "axios";
 import { normalizeLanguageCode } from "../utils/language";
 
+// In dev, VITE_API_URL is unset so this resolves to "" and every call below
+// stays same-origin, which Vite's dev-server proxy (vite.config.js) forwards
+// to the local backend. In production, set VITE_API_URL to the deployed
+// backend's origin (see render.yaml) so calls reach it directly instead of
+// the static frontend host.
+export const API_BASE = import.meta.env.VITE_API_URL || "";
+
 const api = axios.create({
-  baseURL: "/api", // Use relative paths to work through Vite proxy
+  baseURL: `${API_BASE}/api`,
 });
 
 const _csvToList = (value) =>
@@ -75,7 +82,7 @@ export const sendOrchestratedMessage = async (text, language, user_id, chatMode 
   const normalizedLanguage = normalizeLanguageCode(language);
   const modelRouting = _resolveModelProfileRouting();
 
-  const response = await fetch("/api/orchestrator/query", {
+  const response = await fetch(`${API_BASE}/api/orchestrator/query`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -111,7 +118,7 @@ export const sendOrchestratedMessageStream = async ({
   const normalizedLanguage = normalizeLanguageCode(language);
   const modelRouting = _resolveModelProfileRouting();
 
-  const response = await fetch("/api/chat_stream", {
+  const response = await fetch(`${API_BASE}/api/chat_stream`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -170,7 +177,7 @@ export const sendOrchestratedUploadMessage = async (
     formData.append("attachment_types", item.type || "file");
   });
 
-  const response = await fetch("/api/orchestrator/analyze_uploads", {
+  const response = await fetch(`${API_BASE}/api/orchestrator/analyze_uploads`, {
     method: "POST",
     body: formData,
   });
@@ -188,7 +195,7 @@ export const sendMessage = async (text, language, user_id, chatMode = "general")
   const normalizedLanguage = normalizeLanguageCode(language);
   const modelRouting = _resolveModelProfileRouting();
 
-  const response = await fetch("/api/chat", {
+  const response = await fetch(`${API_BASE}/api/chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -213,7 +220,7 @@ export const sendMessage = async (text, language, user_id, chatMode = "general")
 };
 
 export const getRealtimeEventsFeed = async (limit = 20, focus = "india") => {
-  const response = await fetch(`/api/events/feed?limit=${limit}&focus=${encodeURIComponent(focus)}`);
+  const response = await fetch(`${API_BASE}/api/events/feed?limit=${limit}&focus=${encodeURIComponent(focus)}`);
   if (!response.ok) {
     throw new Error("Failed to fetch realtime events feed.");
   }
@@ -221,7 +228,7 @@ export const getRealtimeEventsFeed = async (limit = 20, focus = "india") => {
 };
 
 export const getDashboardGeoSummary = async (limit = 50, focus = "india") => {
-  const response = await fetch(`/api/dashboard/geo?limit=${limit}&focus=${encodeURIComponent(focus)}`);
+  const response = await fetch(`${API_BASE}/api/dashboard/geo?limit=${limit}&focus=${encodeURIComponent(focus)}`);
   if (!response.ok) {
     throw new Error("Failed to fetch geo dashboard summary.");
   }
@@ -229,7 +236,7 @@ export const getDashboardGeoSummary = async (limit = 50, focus = "india") => {
 };
 
 export const getPlatformStatus = async () => {
-  const response = await fetch("/api/platform/status");
+  const response = await fetch(`${API_BASE}/api/platform/status`);
   if (!response.ok) {
     throw new Error("Failed to fetch platform status.");
   }
@@ -237,7 +244,7 @@ export const getPlatformStatus = async () => {
 };
 
 export const getWorldMonitorConfig = async () => {
-  const response = await fetch("/api/world-monitor/config");
+  const response = await fetch(`${API_BASE}/api/world-monitor/config`);
   if (!response.ok) {
     throw new Error("Failed to fetch World Monitor configuration.");
   }
@@ -245,7 +252,7 @@ export const getWorldMonitorConfig = async () => {
 };
 
 export const getRagSchedulerStatus = async () => {
-  const response = await fetch("/api/rag/scheduler/status");
+  const response = await fetch(`${API_BASE}/api/rag/scheduler/status`);
   if (!response.ok) {
     throw new Error("Failed to fetch RAG scheduler status.");
   }
@@ -253,7 +260,7 @@ export const getRagSchedulerStatus = async () => {
 };
 
 export const forceRagUpdate = async () => {
-  const response = await fetch("/api/rag/scheduler/force_update", { method: "POST" });
+  const response = await fetch(`${API_BASE}/api/rag/scheduler/force_update`, { method: "POST" });
   if (!response.ok) {
     throw new Error("Failed to force RAG update.");
   }
@@ -261,7 +268,7 @@ export const forceRagUpdate = async () => {
 };
 
 export const enableRagScheduler = async () => {
-  const response = await fetch("/api/rag/scheduler/enable", { method: "POST" });
+  const response = await fetch(`${API_BASE}/api/rag/scheduler/enable`, { method: "POST" });
   if (!response.ok) {
     throw new Error("Failed to enable RAG scheduler.");
   }
@@ -269,7 +276,7 @@ export const enableRagScheduler = async () => {
 };
 
 export const disableRagScheduler = async () => {
-  const response = await fetch("/api/rag/scheduler/disable", { method: "POST" });
+  const response = await fetch(`${API_BASE}/api/rag/scheduler/disable`, { method: "POST" });
   if (!response.ok) {
     throw new Error("Failed to disable RAG scheduler.");
   }
@@ -277,7 +284,7 @@ export const disableRagScheduler = async () => {
 };
 
 export const getModelsCatalog = async () => {
-  const response = await fetch("/api/models/catalog");
+  const response = await fetch(`${API_BASE}/api/models/catalog`);
   if (!response.ok) {
     throw new Error("Failed to fetch models catalog.");
   }
@@ -285,7 +292,7 @@ export const getModelsCatalog = async () => {
 };
 
 export const summarizeChat = async (messages, language) => {
-  const response = await fetch("/api/summarize_chat", {
+  const response = await fetch(`${API_BASE}/api/summarize_chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -302,7 +309,7 @@ export const summarizeChat = async (messages, language) => {
 export const generateAIImage = async ({ prompt, style = "cinematic", quality = "hd", size = "1024x1024" }) => {
   let response;
   try {
-    response = await fetch("/api/images/generate", {
+    response = await fetch(`${API_BASE}/api/images/generate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -329,7 +336,7 @@ export const generateAIImage = async ({ prompt, style = "cinematic", quality = "
 export const generateDocument = async ({ format, prompt, language = "en" }) => {
   let response;
   try {
-    response = await fetch("/api/documents/generate", {
+    response = await fetch(`${API_BASE}/api/documents/generate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -397,7 +404,7 @@ export const runAgentStream = ({ task, mode = 'general', contextFiles = [], work
 
   (async () => {
     try {
-      const response = await fetch('/api/agent/run', {
+      const response = await fetch(`${API_BASE}/api/agent/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ..._authHeaders() },
         body: JSON.stringify({ task, mode, context_files: contextFiles, working_dir: workingDir }),
@@ -423,7 +430,7 @@ export const resumeAgentStream = ({ sessionId, decision, onEvent }) => {
 
   (async () => {
     try {
-      const response = await fetch('/api/agent/resume', {
+      const response = await fetch(`${API_BASE}/api/agent/resume`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ..._authHeaders() },
         body: JSON.stringify({ session_id: sessionId, decision }),
@@ -444,7 +451,7 @@ export const resumeAgentStream = ({ sessionId, decision, onEvent }) => {
  * Simple non-streaming agent chat (quick questions, no tool loop).
  */
 export const agentChat = async ({ task, mode = 'general', history = [] }) => {
-  const response = await fetch('/api/agent/chat', {
+  const response = await fetch(`${API_BASE}/api/agent/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ..._authHeaders() },
     body: JSON.stringify({ task, mode, history }),
@@ -458,7 +465,7 @@ export const agentChat = async ({ task, mode = 'general', history = [] }) => {
  * Get available agent modes from the backend.
  */
 export const getAgentModes = async () => {
-  const response = await fetch('/api/agent/modes', { headers: _authHeaders() });
+  const response = await fetch(`${API_BASE}/api/agent/modes`, { headers: _authHeaders() });
   const data = await response.json();
   return data.modes || [];
 };
