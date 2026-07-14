@@ -46,8 +46,10 @@ class LLMService:
         # Cache configuration
         self.cache = get_cache_service()
         self.llm_cache_ttl = 600  # 10 minutes for LLM responses
-        # RAG service for context retrieval
-        self.rag = get_rag_service()
+        # RAG service for context retrieval - only instantiate (loads
+        # sentence-transformers/torch/faiss into memory) when actually
+        # enabled; RAG_ENABLED=False keeps this at zero cost.
+        self.rag = get_rag_service() if config.RAG_ENABLED else None
         self.use_rag = False  # Will be enabled after RAG initialization
         # Chat mode
         self.current_mode = "general"

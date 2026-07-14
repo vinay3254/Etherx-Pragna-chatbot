@@ -93,6 +93,10 @@ logs/
 *.log
 *.log.*
 
+# Local-only tunnel/dev artifacts (e.g. cloudflared quick-tunnel binary)
+cloudflared.exe
+*.pid
+
 # ===================================================================
 # Build Outputs
 # ===================================================================

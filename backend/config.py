@@ -340,6 +340,14 @@ LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
 # ======================== RAG KNOWLEDGE BASE UPDATES ========================
 # Keep models updated with real-time information beyond training cutoff (Dec 2023)
 
+# Master switch for RAG. When False, app.py skips eager RAG initialization
+# at boot entirely (no sentence-transformers/torch/faiss loaded, no default
+# knowledge base population, no update scheduler) - saves ~500MB-1GB+ RAM at
+# idle. The main /api/chat flow doesn't use RAG at all today (only the
+# dedicated /api/rag/* management routes do), so disabling this has no
+# effect on normal chat. Set False on memory-constrained free-tier hosts.
+RAG_ENABLED = os.getenv('RAG_ENABLED', 'True').lower() == 'true'
+
 # Enable automatic knowledge base updates
 RAG_AUTO_UPDATE_ENABLED = os.getenv('RAG_AUTO_UPDATE_ENABLED', 'True').lower() == 'true'
 

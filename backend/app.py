@@ -463,50 +463,57 @@ llm = LLMService()
 orchestrator = AIOrchestrator(llm)
 
 # Initialize RAG service with default knowledge base (skip if it takes too long)
-logger.info("🚀 Initializing RAG service...")
-rag = get_rag_service()
-try:
-    import threading
-    import queue
-    
-    rag_initialized = queue.Queue()
-    
-    def init_rag_with_timeout():
-        try:
-            if initialize_rag_with_defaults():
-                llm.enable_rag()
-                rag_initialized.put(True)
-            else:
-                rag_initialized.put(False)
-        except Exception as e:
-            logger.warning(f"RAG init error: {e}")
-            rag_initialized.put(False)
-    
-    # Run RAG initialization in background thread with 10 second timeout
-    rag_thread = threading.Thread(target=init_rag_with_timeout, daemon=True)
-    rag_thread.start()
-    rag_thread.join(timeout=10)
-    
+# Gated by RAG_ENABLED - the main /api/chat flow doesn't use RAG, only the
+# dedicated /api/rag/* routes do, and those lazily init get_rag_service()
+# on first call regardless. Set RAG_ENABLED=False to skip loading
+# sentence-transformers/torch/faiss at boot on memory-constrained hosts.
+if config.RAG_ENABLED:
+    logger.info("🚀 Initializing RAG service...")
+    rag = get_rag_service()
     try:
-        success = rag_initialized.get_nowait()
-        if success:
-            logger.info("✅ RAG service ready with knowledge base")
-        else:
-            logger.warning("⚠️ RAG service initialization failed")
-    except queue.Empty:
-        logger.warning("⚠️ RAG initialization timed out (taking too long); continuing without it")
-        
-except Exception as e:
-    logger.warning(f"⚠️ RAG service not available: {e}")
+        import threading
+        import queue
 
-# Start background scheduler for RAG updates (in background thread)
-logger.info("🔄 Starting RAG update scheduler...")
-try:
-    start_scheduler()
-    scheduler_status = get_scheduler_status()
-    logger.info(f"📊 Scheduler status: {scheduler_status}")
-except Exception as e:
-    logger.warning(f"⚠️ RAG scheduler error: {e}")
+        rag_initialized = queue.Queue()
+
+        def init_rag_with_timeout():
+            try:
+                if initialize_rag_with_defaults():
+                    llm.enable_rag()
+                    rag_initialized.put(True)
+                else:
+                    rag_initialized.put(False)
+            except Exception as e:
+                logger.warning(f"RAG init error: {e}")
+                rag_initialized.put(False)
+
+        # Run RAG initialization in background thread with 10 second timeout
+        rag_thread = threading.Thread(target=init_rag_with_timeout, daemon=True)
+        rag_thread.start()
+        rag_thread.join(timeout=10)
+
+        try:
+            success = rag_initialized.get_nowait()
+            if success:
+                logger.info("✅ RAG service ready with knowledge base")
+            else:
+                logger.warning("⚠️ RAG service initialization failed")
+        except queue.Empty:
+            logger.warning("⚠️ RAG initialization timed out (taking too long); continuing without it")
+
+    except Exception as e:
+        logger.warning(f"⚠️ RAG service not available: {e}")
+
+    # Start background scheduler for RAG updates (in background thread)
+    logger.info("🔄 Starting RAG update scheduler...")
+    try:
+        start_scheduler()
+        scheduler_status = get_scheduler_status()
+        logger.info(f"📊 Scheduler status: {scheduler_status}")
+    except Exception as e:
+        logger.warning(f"⚠️ RAG scheduler error: {e}")
+else:
+    logger.info("⏭️  RAG_ENABLED=False - skipping RAG init to save memory on boot")
 
 logger.info("✅ Chatbot server starting...")
 logger.info(f"✅ Using Groq model: {config.GROQ_MODEL}")
@@ -780,36 +787,42 @@ def health_check():
         health_status['errors'].append(f'❌ API key check failed: {e}')
     
     # Check 2: LLM Test Request
-    try:
-        from services.llm import _request_completion
-        test_messages = [
-            {'role': 'system', 'content': 'You are a helpful assistant. Respond with exactly: SUCCESS'},
-            {'role': 'user', 'content': 'test'}
-        ]
-        
+    # Skipped by default - Docker's HEALTHCHECK polls this endpoint every
+    # 30s, and a real completion call on every poll burns through Ollama
+    # Cloud's free-tier quota for nothing. Pass ?deep=true for the real check.
+    if request.args.get('deep', '').lower() != 'true':
+        health_status['systems']['llm'] = {'status': 'skipped', 'note': 'pass ?deep=true for a live completion check'}
+    else:
         try:
-            response = _request_completion(test_messages, config.DEFAULT_MODEL_KEY)
-            if response and 'success' in response.lower():
-                health_status['systems']['llm'] = {
-                    'status': 'healthy',
-                    'model': config.DEFAULT_MODEL_KEY,
-                    'response_length': len(response)
-                }
-            else:
-                health_status['systems']['llm'] = {
-                    'status': 'responding',
-                    'model': config.DEFAULT_MODEL_KEY,
-                    'response_sample': response[:100]
-                }
-        except RuntimeError as e:
-            if '401' in str(e) or 'not configured' in str(e).lower():
-                health_status['errors'].append(f'❌ LLM API Error: {e}')
-                health_status['systems']['llm'] = {'status': 'error', 'error': str(e)[:200]}
-            else:
-                raise
-    except Exception as e:
-        health_status['systems']['llm'] = {'status': 'error', 'error': str(e)[:200]}
-        health_status['errors'].append(f'❌ LLM check failed: {str(e)[:100]}')
+            from services.llm import _request_completion
+            test_messages = [
+                {'role': 'system', 'content': 'You are a helpful assistant. Respond with exactly: SUCCESS'},
+                {'role': 'user', 'content': 'test'}
+            ]
+
+            try:
+                response = _request_completion(test_messages, config.DEFAULT_MODEL_KEY)
+                if response and 'success' in response.lower():
+                    health_status['systems']['llm'] = {
+                        'status': 'healthy',
+                        'model': config.DEFAULT_MODEL_KEY,
+                        'response_length': len(response)
+                    }
+                else:
+                    health_status['systems']['llm'] = {
+                        'status': 'responding',
+                        'model': config.DEFAULT_MODEL_KEY,
+                        'response_sample': response[:100]
+                    }
+            except RuntimeError as e:
+                if '401' in str(e) or 'not configured' in str(e).lower():
+                    health_status['errors'].append(f'❌ LLM API Error: {e}')
+                    health_status['systems']['llm'] = {'status': 'error', 'error': str(e)[:200]}
+                else:
+                    raise
+        except Exception as e:
+            health_status['systems']['llm'] = {'status': 'error', 'error': str(e)[:200]}
+            health_status['errors'].append(f'❌ LLM check failed: {str(e)[:100]}')
     
     # Check 3: Database
     try:
@@ -834,16 +847,23 @@ def health_check():
         health_status['systems']['cache'] = {'status': 'error', 'error': str(e)[:100]}
     
     # Check 5: RAG
-    try:
-        rag = get_rag_service()
-        rag_stats = rag.get_stats()
-        health_status['systems']['rag'] = {
-            'status': 'healthy' if rag_stats.get('enabled') else 'disabled',
-            'documents': rag_stats.get('document_count', 0),
-            'enabled': rag_stats.get('enabled', False)
-        }
-    except Exception as e:
-        health_status['systems']['rag'] = {'status': 'error', 'error': str(e)[:100]}
+    # Only touches get_rag_service() (which loads sentence-transformers/
+    # torch/faiss on first call) when RAG_ENABLED - otherwise this health
+    # check, which Docker's HEALTHCHECK polls every 30s, would force that
+    # load on every single container regardless of the setting.
+    if config.RAG_ENABLED:
+        try:
+            rag = get_rag_service()
+            rag_stats = rag.get_stats()
+            health_status['systems']['rag'] = {
+                'status': 'healthy' if rag_stats.get('enabled') else 'disabled',
+                'documents': rag_stats.get('document_count', 0),
+                'enabled': rag_stats.get('enabled', False)
+            }
+        except Exception as e:
+            health_status['systems']['rag'] = {'status': 'error', 'error': str(e)[:100]}
+    else:
+        health_status['systems']['rag'] = {'status': 'disabled', 'enabled': False}
     
     # Overall status determination
     critical_errors = [e for e in health_status['errors'] if '❌' in e]

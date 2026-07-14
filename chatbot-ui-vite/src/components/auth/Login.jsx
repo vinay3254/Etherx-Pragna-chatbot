@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import '../../styles/auth.css';
 import { authAPI } from '../../api/authAPI';
+import pragnaLogo from '../../assets/pragna-logo-full.png';
 
 export default function Login({ onLoginSuccess }) {
   const vantaRef = useRef(null);
@@ -127,7 +128,7 @@ export default function Login({ onLoginSuccess }) {
 
       <div className="auth-header">
         <div className="header-logo-container">
-          <img src="/src/assets/pragna-logo-full.png" alt="Pragna" className="header-logo-small" />
+          <img src={pragnaLogo} alt="Pragna" className="header-logo-small" />
           <h2 className="project-name">PRAGNA-1 A</h2>
         </div>
         <p className="company-subtitle">
