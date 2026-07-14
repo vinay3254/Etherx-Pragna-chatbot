@@ -54,13 +54,18 @@ def _call_ollama_direct(messages: List[Dict[str, str]]) -> str:
         "temperature": 0.7,
     }
     
+    headers = {"Content-Type": "application/json"}
+    if config.OLLAMA_API_KEY:
+        headers["Authorization"] = f"Bearer {config.OLLAMA_API_KEY}"
+
     logger.info(f"🚀 Calling Ollama at {endpoint}")
     logger.info(f"   Model: {config.OLLAMA_MODEL}")
     logger.info(f"   Prompt length: {len(prompt)} chars")
-    
+
     try:
         response = requests.post(
             endpoint,
+            headers=headers,
             json=payload,
             timeout=config.OLLAMA_TIMEOUT
         )
@@ -160,7 +165,7 @@ def _resolve_request_config(model_key: Optional[str]) -> Dict[str, object]:
             "provider": "ollama",
             "model": model_name,
             "endpoint": f"{config.OLLAMA_API_URL.rstrip('/')}/v1/chat/completions",
-            "api_key": "",
+            "api_key": config.OLLAMA_API_KEY,
             "timeout": config.OLLAMA_TIMEOUT,
             "requires_api_key": False,
             "model_key": f"ollama:{model_name}",

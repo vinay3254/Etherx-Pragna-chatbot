@@ -13,29 +13,44 @@ services:
     startCommand: gunicorn app:app --workers 2 --timeout 120 --bind 0.0.0.0:$PORT
     envVars:
       - key: LLM_PROVIDER
-        value: ollama_only # Ollama is primary. Render can't host Ollama itself -
-                            # point OLLAMA_API_URL at an externally reachable
-                            # Ollama instance (VPS, RunPod, Fly.io, etc).
+        value: standard # 'standard' mode uses the real fallback chain below
+                         # (DEFAULT_MODEL_FALLBACKS) via services/llm.py
+                         # _request_completion. ollama_only mode has ZERO
+                         # fallback - not worth the risk on a free cloud quota.
       - key: OLLAMA_API_URL
-        sync: false # REQUIRED: URL of your externally hosted Ollama instance,
-                     # e.g. https://ollama.yourdomain.com or a Tailscale address.
-                     # Must be reachable from Render's network. Put auth in front
-                     # of it (Ollama itself has no built-in auth).
+        value: https://ollama.com # Ollama's hosted cloud API - serves :cloud
+                                   # models with no self-hosted daemon needed.
+                                   # Only works for :cloud-tagged models; swap
+                                   # to a self-hosted URL if you add a VPS -
+                                   # note this URL is shared by ALL ollama:
+                                   # candidates below, so the non-:cloud ones
+                                   # (Miku, Jenteck-GPT) will fail until then.
       - key: OLLAMA_MODEL
-        value: Ravishka/Miku # must match a model already pulled (or a :cloud
-                              # model signed in) on the Ollama host. Matches
-                              # local backend/.env - change here if the host's
-                              # available models differ.
+        value: qwen3-coder-next:cloud # used by the agent subsystem
+                                       # (services/code_agent.py) and the
+                                       # /api/test-ollama diagnostic route,
+                                       # not by the main chat path in
+                                       # 'standard' mode (that uses
+                                       # DEFAULT_MODEL_KEY below).
+      - key: OLLAMA_API_KEY
+        sync: false # REQUIRED: your Ollama Cloud API key from
+                     # ollama.com/settings/keys. Authenticates requests to
+                     # https://ollama.com for :cloud models.
       - key: DEFAULT_MODEL_KEY
-        value: ollama:Ravishka/Miku
+        value: ollama:qwen3-coder-next:cloud
       - key: DEFAULT_MODEL_FALLBACKS
-        value: ollama:Ravishka/Miku,ollama:jensonodigie/Jenteck-GPT,ollama:qwen3-coder-next:cloud
+        # Order: 2 real cloud models (both work with just OLLAMA_API_KEY,
+        # no VPS) -> Groq (needs GROQ_API_KEY) -> the two community models,
+        # which will fail until they're pulled on a self-hosted Ollama and
+        # OLLAMA_API_URL points there instead of ollama.com.
+        value: ollama:qwen3-coder-next:cloud,ollama:nemotron-3-super:cloud,groq:llama-3.1-8b-instant,ollama:Ravishka/Miku,ollama:jensonodigie/Jenteck-GPT
       - key: CLASSIFIER_MODEL_KEY
-        value: ollama:Ravishka/Miku
+        value: ollama:qwen3-coder-next:cloud
       - key: CLASSIFIER_FALLBACKS
-        value: ollama:Ravishka/Miku,ollama:jensonodigie/Jenteck-GPT,ollama:qwen3-coder-next:cloud
+        value: ollama:qwen3-coder-next:cloud,ollama:nemotron-3-super:cloud,groq:llama-3.1-8b-instant,ollama:Ravishka/Miku,ollama:jensonodigie/Jenteck-GPT
       - key: GROQ_API_KEY
-        sync: false # You will set this in Render dashboard
+        sync: false # RECOMMENDED: safety net if Ollama Cloud's free quota
+                     # runs out mid-week. Free key at console.groq.com
       - key: SERPER_API_KEY
         sync: false
       - key: JWT_SECRET

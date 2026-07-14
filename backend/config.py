@@ -68,6 +68,10 @@ OLLAMA_ENABLED = os.getenv('OLLAMA_ENABLED', 'True').lower() == 'true'
 OLLAMA_API_URL = os.getenv('OLLAMA_API_URL', 'http://localhost:11434')
 OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'mistral')
 OLLAMA_TIMEOUT = int(os.getenv('OLLAMA_TIMEOUT', 120))
+# Only needed when OLLAMA_API_URL points at Ollama's hosted cloud API
+# (https://ollama.com) instead of a self-hosted daemon - authenticates
+# requests to :cloud-tagged models. Unused for local/self-hosted Ollama.
+OLLAMA_API_KEY = os.getenv('OLLAMA_API_KEY', '')
 
 # ── DeepSeek Local (HuggingFace Transformers) ──────────────────────────────
 # Used when LLM_PROVIDER = 'deepseek_local'.  The model is downloaded once

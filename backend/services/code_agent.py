@@ -431,7 +431,10 @@ def _call_ollama(messages: list, stream: bool = False):
             "num_ctx": 8192,
         },
     }
-    resp = requests.post(url, json=payload, timeout=120, stream=stream)
+    headers = {}
+    if config.OLLAMA_API_KEY:
+        headers["Authorization"] = f"Bearer {config.OLLAMA_API_KEY}"
+    resp = requests.post(url, headers=headers, json=payload, timeout=120, stream=stream)
     resp.raise_for_status()
     return resp
 

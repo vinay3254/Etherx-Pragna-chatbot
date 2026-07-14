@@ -899,9 +899,13 @@ def test_ollama():
     
     # Check 2: Can we reach Ollama?
     ollama_url = config.OLLAMA_API_URL.rstrip('/')
+    ollama_headers = {}
+    if config.OLLAMA_API_KEY:
+        ollama_headers["Authorization"] = f"Bearer {config.OLLAMA_API_KEY}"
     try:
         response = requests.get(
             f"{ollama_url}/api/tags",
+            headers=ollama_headers,
             timeout=5
         )
         response.raise_for_status()
