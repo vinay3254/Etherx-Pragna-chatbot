@@ -344,7 +344,7 @@ ${turns}
   const unfiledChats = filteredChats.filter((chat) => !chat.folderId)
 
   return (
-    <aside style={{ width: '340px', flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'rgba(20,20,20,0.82)', borderRight: '1px solid #2d2a24', backdropFilter: 'blur(8px)', height: '100%' }}>
+    <aside style={{ width: '340px', flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--pragna-surface)', borderRight: '1px solid var(--pragna-border)', backdropFilter: 'blur(8px)', height: '100%' }}>
       
       {/* Wordmark logo */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 16px 20px' }}>
@@ -354,8 +354,8 @@ ${turns}
             type="button"
             onClick={toggleSidebar}
             title="Close sidebar"
-            style={{ padding: '6px', borderRadius: '8px', border: 'none', background: 'transparent', color: '#a89878', cursor: 'pointer', display: 'flex', flexShrink: 0 }}
-            className="hover:bg-[#1a1a1a] hover:text-[#e5c76b]"
+            style={{ padding: '6px', borderRadius: '8px', border: 'none', background: 'transparent', color: 'var(--pragna-text-muted)', cursor: 'pointer', display: 'flex', flexShrink: 0 }}
+            className="hover:bg-[var(--pragna-surface-2)] hover:text-[var(--pragna-gold-soft)]"
           >
             <PanelLeftClose size={18} />
           </button>
@@ -376,7 +376,7 @@ ${turns}
             borderRadius: '12px',
             border: '1px solid rgba(212,175,55,0.35)',
             background: 'linear-gradient(135deg, rgba(212,175,55,0.16), rgba(184,134,11,0.10))',
-            color: '#e5c76b',
+            color: 'var(--pragna-gold-soft)',
             fontSize: '14px',
             fontWeight: 600,
             letterSpacing: '0.3px',
@@ -410,7 +410,7 @@ ${turns}
                 borderRadius: '11px',
                 border: active ? '1px solid rgba(212,175,55,0.30)' : '1px solid transparent',
                 background: active ? 'linear-gradient(135deg, rgba(212,175,55,0.14), rgba(184,134,11,0.07))' : 'transparent',
-                color: active ? '#e5c76b' : '#c9bda2',
+                color: active ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-soft)',
                 fontSize: '14.5px',
                 fontWeight: active ? 650 : 500,
                 letterSpacing: '0.2px',
@@ -418,7 +418,7 @@ ${turns}
                 textAlign: 'left',
                 transition: 'all 0.15s ease',
               }}
-              className="hover:bg-[#1a1a1a] hover:text-[#e5c76b]"
+              className="hover:bg-[var(--pragna-surface-2)] hover:text-[var(--pragna-gold-soft)]"
             >
               <span style={{ display: 'flex', width: '20px', height: '20px', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {navIcon(nav.id)}
@@ -452,9 +452,9 @@ ${turns}
               width: '100%',
               padding: '7px 12px',
               borderRadius: '8px',
-              border: '1px solid #2d2a24',
-              background: '#1a1a1a',
-              color: '#f0e6d3',
+              border: '1px solid var(--pragna-border)',
+              background: 'var(--pragna-surface-2)',
+              color: 'var(--pragna-text)',
               fontSize: '13px',
             }}
             className="focus-ring"
@@ -473,11 +473,11 @@ ${turns}
               style={{
                 width: '100%',
                 padding: '6px 10px',
-                border: '1px solid #2d2a24',
+                border: '1px solid var(--pragna-border)',
                 borderRadius: '8px',
                 fontSize: '13px',
-                background: '#1a1a1a',
-                color: '#f0e6d3',
+                background: 'var(--pragna-surface-2)',
+                color: 'var(--pragna-text)',
               }}
               onBlur={() => {
                 if (newFolderName.trim()) createFolder(newFolderName)
@@ -507,14 +507,14 @@ ${turns}
                 borderRadius: '8px',
                 border: 'none',
                 background: 'transparent',
-                color: '#a89878',
+                color: 'var(--pragna-text-muted)',
                 fontSize: '12.5px',
                 fontWeight: 600,
                 cursor: 'pointer',
                 width: '100%',
                 textAlign: 'left',
               }}
-              className="hover:bg-[#1a1a1a] hover:text-[#e5c76b]"
+              className="hover:bg-[var(--pragna-surface-2)] hover:text-[var(--pragna-gold-soft)]"
             >
               <FolderPlus size={14} />
               <span>New Folder</span>
@@ -546,11 +546,11 @@ ${turns}
                     style={{
                       width: '100%',
                       padding: '6px 10px',
-                      border: '1px solid #2d2a24',
+                      border: '1px solid var(--pragna-border)',
                       borderRadius: '8px',
                       fontSize: '13px',
-                      background: '#1a1a1a',
-                      color: '#f0e6d3',
+                      background: 'var(--pragna-surface-2)',
+                      color: 'var(--pragna-text)',
                     }}
                     onBlur={() => {
                       if (folderRenameName.trim()) renameFolder(folder.id, folderRenameName)
@@ -568,7 +568,7 @@ ${turns}
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 14px', position: 'relative' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '11.5px', fontWeight: 700, letterSpacing: '1px', color: '#a89878' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '11.5px', fontWeight: 700, letterSpacing: '1px', color: 'var(--pragna-text-muted)' }}>
                     <Folder size={13} />
                     <span>{folder.name.toUpperCase()}</span>
                     <span style={{ color: '#6b6152' }}>({folderChats.length})</span>
@@ -576,7 +576,7 @@ ${turns}
                   <button
                     type="button"
                     onClick={() => setFolderMenuOpenId(folderMenuOpenId === folder.id ? null : folder.id)}
-                    style={{ padding: '2px', borderRadius: '4px', border: 'none', background: 'transparent', color: '#a89878', cursor: 'pointer', display: 'flex' }}
+                    style={{ padding: '2px', borderRadius: '4px', border: 'none', background: 'transparent', color: 'var(--pragna-text-muted)', cursor: 'pointer', display: 'flex' }}
                     aria-label={`Menu for ${folder.name}`}
                   >
                     <MoreVertical size={13} />
@@ -593,7 +593,7 @@ ${turns}
                           zIndex: 100,
                           padding: '4px',
                           borderRadius: '10px',
-                          background: '#141414',
+                          background: 'var(--pragna-surface)',
                           border: '1px solid rgba(212,175,55,0.22)',
                           boxShadow: '0 10px 24px rgba(0,0,0,0.5)',
                         }}
@@ -605,7 +605,7 @@ ${turns}
                             setFolderMenuOpenId(null)
                           }}
                           style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '7px', border: 'none', background: 'transparent', color: '#d8cbb0', fontSize: '13px', cursor: 'pointer', textAlign: 'left' }}
-                          className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+                          className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
                         >
                           <Edit2 size={14} />
                           <span>Rename</span>
@@ -671,7 +671,7 @@ ${turns}
             if (chatId) moveChatToFolder(chatId, null)
           }}
         >
-          <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: '#a89878', padding: '0 14px 10px 14px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: 'var(--pragna-text-muted)', padding: '0 14px 10px 14px' }}>
             RECENTS
           </div>
 
@@ -685,11 +685,11 @@ ${turns}
                 style={{
                   width: '100%',
                   padding: '6px 10px',
-                  border: '1px solid #2d2a24',
+                  border: '1px solid var(--pragna-border)',
                   borderRadius: '8px',
                   fontSize: '13px',
-                  background: '#1a1a1a',
-                  color: '#f0e6d3',
+                  background: 'var(--pragna-surface-2)',
+                  color: 'var(--pragna-text)',
                 }}
                 onBlur={() => {
                   if (newTitle) handleRenameConfirm(renameDialogId)
@@ -760,7 +760,7 @@ ${turns}
                 zIndex: 41,
                 padding: '8px',
                 borderRadius: '14px',
-                background: '#141414',
+                background: 'var(--pragna-surface)',
                 border: '1px solid rgba(212,175,55,0.22)',
                 boxShadow: '0 20px 32px rgba(0,0,0,0.50)',
                 animation: 'fadeUp 0.15s ease',
@@ -773,9 +773,9 @@ ${turns}
                   onOpenSettings?.()
                 }}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '11px', padding: '10px 12px', borderRadius: '9px', border: 'none', background: 'transparent', color: '#d8cbb0', fontSize: '13.5px', fontWeight: 500, cursor: 'pointer', textAlign: 'left' }}
-                className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+                className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
               >
-                <span style={{ display: 'flex', width: '16px', height: '16px', color: '#a89878', flexShrink: 0 }}>
+                <span style={{ display: 'flex', width: '16px', height: '16px', color: 'var(--pragna-text-muted)', flexShrink: 0 }}>
                   {gearIcon('gear')}
                 </span>
                 <span style={{ flex: 1 }}>Settings</span>
@@ -789,9 +789,9 @@ ${turns}
                   onLogout?.()
                 }}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '11px', padding: '10px 12px', borderRadius: '9px', border: 'none', background: 'transparent', color: '#d8cbb0', fontSize: '13.5px', fontWeight: 500, cursor: 'pointer', textAlign: 'left' }}
-                className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+                className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
               >
-                <span style={{ display: 'flex', width: '16px', height: '16px', color: '#a89878', flexShrink: 0 }}>
+                <span style={{ display: 'flex', width: '16px', height: '16px', color: 'var(--pragna-text-muted)', flexShrink: 0 }}>
                   {gearIcon('logout')}
                 </span>
                 <span style={{ flex: 1 }}>Log out</span>
@@ -809,24 +809,24 @@ ${turns}
             alignItems: 'center',
             gap: '12px',
             padding: '16px 18px',
-            borderTop: '1px solid #2d2a24',
-            background: 'rgba(10,10,10,0.4)',
+            borderTop: '1px solid var(--pragna-border)',
+            background: 'var(--pragna-surface-2)',
             cursor: 'pointer',
             transition: 'background 0.15s ease',
           }}
-          className="hover:bg-[#1a1a1a]"
+          className="hover:bg-[var(--pragna-surface-2)]"
         >
           <div
             style={{
               width: '38px',
               height: '38px',
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #2a2415, #1a1a1a)',
+              background: 'linear-gradient(135deg, #2a2415, var(--pragna-surface-2))',
               border: '1.5px solid rgba(212,175,55,0.4)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#d4af37',
+              color: 'var(--pragna-accent)',
               fontWeight: 700,
               fontSize: '15px',
               flexShrink: 0,
@@ -835,8 +835,8 @@ ${turns}
             {initials}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '14px', fontWeight: 600, color: '#f0e6d3' }}>{displayName}</div>
-            <div style={{ fontSize: '12px', color: '#a89878', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--pragna-text)' }}>{displayName}</div>
+            <div style={{ fontSize: '12px', color: 'var(--pragna-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {displayEmail}
             </div>
           </div>
@@ -847,7 +847,7 @@ ${turns}
               borderRadius: '9px',
               border: 'none',
               background: 'transparent',
-              color: '#a89878',
+              color: 'var(--pragna-text-muted)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -855,7 +855,7 @@ ${turns}
               transition: 'all 0.15s ease',
               flexShrink: 0,
             }}
-            className="hover:bg-[#1a1a1a] hover:text-[#e5c76b]"
+            className="hover:bg-[var(--pragna-surface-2)] hover:text-[var(--pragna-gold-soft)]"
           >
             {gearIcon('gear')}
           </button>

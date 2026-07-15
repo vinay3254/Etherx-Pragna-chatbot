@@ -71,7 +71,7 @@ const RecentItem = ({
         padding: '10px 14px',
         borderRadius: '10px',
         cursor: 'pointer',
-        background: active ? '#1a1a1a' : 'transparent',
+        background: active ? 'var(--pragna-surface-2)' : 'transparent',
         border: `1px solid ${active ? 'rgba(212,175,55,0.22)' : 'transparent'}`,
         transition: 'all 0.15s ease',
         position: 'relative',
@@ -84,7 +84,7 @@ const RecentItem = ({
         height="15"
         viewBox="0 0 24 24"
         fill="none"
-        stroke={active ? '#f0e6d3' : '#a89878'}
+        stroke={active ? 'var(--pragna-text)' : 'var(--pragna-text-muted)'}
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -98,7 +98,7 @@ const RecentItem = ({
         style={{
           flex: 1,
           fontSize: '13.5px',
-          color: active ? '#f0e6d3' : '#a89878',
+          color: active ? 'var(--pragna-text)' : 'var(--pragna-text-muted)',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
@@ -120,7 +120,7 @@ const RecentItem = ({
           borderRadius: '4px',
           border: 'none',
           background: 'transparent',
-          color: '#a89878',
+          color: 'var(--pragna-text-muted)',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
@@ -145,7 +145,7 @@ const RecentItem = ({
             zIndex: 100,
             padding: '4px',
             borderRadius: '10px',
-            background: '#141414',
+            background: 'var(--pragna-surface)',
             border: '1px solid rgba(212,175,55,0.22)',
             boxShadow: '0 10px 24px rgba(0,0,0,0.5)',
           }}
@@ -167,7 +167,7 @@ const RecentItem = ({
               cursor: 'pointer',
               textAlign: 'left',
             }}
-            className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+            className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
             <Share size={14} />
             <span>Share</span>
@@ -189,7 +189,7 @@ const RecentItem = ({
               cursor: 'pointer',
               textAlign: 'left',
             }}
-            className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+            className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
             <Download size={14} />
             <span>Export</span>
@@ -211,7 +211,7 @@ const RecentItem = ({
               cursor: 'pointer',
               textAlign: 'left',
             }}
-            className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+            className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
             <Printer size={14} />
             <span>Export as PDF</span>
@@ -233,7 +233,7 @@ const RecentItem = ({
               cursor: 'pointer',
               textAlign: 'left',
             }}
-            className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+            className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
             <Copy size={14} />
             <span>Duplicate</span>
@@ -255,7 +255,7 @@ const RecentItem = ({
               cursor: 'pointer',
               textAlign: 'left',
             }}
-            className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+            className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
             <Users size={14} />
             <span>Group Chat</span>
@@ -277,7 +277,7 @@ const RecentItem = ({
               cursor: 'pointer',
               textAlign: 'left',
             }}
-            className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+            className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
             <Edit2 size={14} />
             <span>Rename</span>
@@ -299,7 +299,7 @@ const RecentItem = ({
               cursor: 'pointer',
               textAlign: 'left',
             }}
-            className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+            className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
             <Pin size={14} />
             <span>{isPinned ? 'Unpin' : 'Pin'}</span>
@@ -324,7 +324,7 @@ const RecentItem = ({
               cursor: 'pointer',
               textAlign: 'left',
             }}
-            className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+            className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
             <Folder size={14} />
             <span>Move to folder</span>
@@ -347,12 +347,12 @@ const RecentItem = ({
                     borderRadius: '7px',
                     border: 'none',
                     background: 'transparent',
-                    color: folder.id === currentFolderId ? '#e5c76b' : '#a89878',
+                    color: folder.id === currentFolderId ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
                     fontSize: '12.5px',
                     cursor: 'pointer',
                     textAlign: 'left',
                   }}
-                  className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+                  className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
                 >
                   {folder.name}
                 </button>
@@ -368,12 +368,12 @@ const RecentItem = ({
                     borderRadius: '7px',
                     border: 'none',
                     background: 'transparent',
-                    color: '#a89878',
+                    color: 'var(--pragna-text-muted)',
                     fontSize: '12.5px',
                     cursor: 'pointer',
                     textAlign: 'left',
                   }}
-                  className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+                  className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
                 >
                   Remove from folder
                 </button>
@@ -397,13 +397,13 @@ const RecentItem = ({
               cursor: 'pointer',
               textAlign: 'left',
             }}
-            className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+            className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
             <Archive size={14} />
             <span>Archive</span>
           </button>
 
-          <div style={{ height: '1px', background: '#2d2a24', margin: '4px 0' }} />
+          <div style={{ height: '1px', background: 'var(--pragna-border)', margin: '4px 0' }} />
 
           <button
             onClick={(e) => handleMenuClick(e, onDelete)}

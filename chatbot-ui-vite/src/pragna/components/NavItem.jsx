@@ -11,7 +11,7 @@ const NavItem = ({ icon: Icon, label, active = false, onClick }) => {
         borderRadius: '11px',
         border: active ? '1px solid rgba(212,175,55,0.30)' : '1px solid transparent',
         background: active ? 'linear-gradient(135deg, rgba(212,175,55,0.14), rgba(184,134,11,0.07))' : 'transparent',
-        color: active ? '#e5c76b' : '#c9bda2',
+        color: active ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-soft)',
         fontSize: '14.5px',
         fontWeight: active ? 650 : 500,
         letterSpacing: '0.2px',
@@ -19,7 +19,7 @@ const NavItem = ({ icon: Icon, label, active = false, onClick }) => {
         textAlign: 'left',
         transition: 'all 0.15s ease',
       }}
-      className="hover:bg-[#1a1a1a] hover:text-[#e5c76b]"
+      className="hover:bg-[var(--pragna-surface-2)] hover:text-[var(--pragna-gold-soft)]"
     >
       <span style={{ display: 'flex', width: '20px', height: '20px', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <Icon size={17} />

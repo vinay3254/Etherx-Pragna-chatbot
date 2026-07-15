@@ -14,7 +14,7 @@ const ModeToggle = () => {
   }, [mode])
 
   return (
-    <div className="inline-flex gap-2 p-[5px] rounded-full bg-[rgba(20,20,20,0.82)] border border-border">
+    <div className="inline-flex gap-2 p-[5px] rounded-full bg-[var(--pragna-surface)] border border-border">
       <button
         onClick={() => setMode('basic')}
         title="Slightly powerful model"
