@@ -15,16 +15,16 @@ const MODES = [
   { id: 'refactor',    label: 'Refactor',     icon: Sparkles, desc: 'Clean up and improve code' },
 ]
 
-// Event stream palette: cards sit on the gold/dark surface (`rgba(20,20,20,0.82)`),
+// Event stream palette: cards sit on the gold/dark surface (`var(--pragna-surface)`),
 // only the border/label accent carries the semantic color (thinking = gold,
 // tool activity = green, needs-attention = amber, error = red).
 const EVENT_COLORS = {
-  thought:     { bg: 'rgba(20,20,20,0.82)', border: 'rgba(212,175,55,0.4)',  label: 'Thinking',        labelColor: '#e5c76b', Icon: Brain },
-  tool_call:   { bg: 'rgba(20,20,20,0.82)', border: 'rgba(52,211,153,0.4)',  label: 'Tool Call',       labelColor: '#34d399', Icon: Wrench },
-  tool_result: { bg: 'rgba(20,20,20,0.82)', border: 'rgba(251,191,36,0.35)', label: 'Result',          labelColor: '#fbbf24', Icon: Upload },
-  confirm_required: { bg: 'rgba(20,20,20,0.82)', border: 'rgba(251,191,36,0.5)', label: 'Approval needed', labelColor: '#fbbf24', Icon: AlertTriangle },
-  done:        { bg: 'rgba(20,20,20,0.82)', border: 'rgba(52,211,153,0.4)',  label: 'Done',            labelColor: '#6ee7b7', Icon: CheckCircle2 },
-  error:       { bg: 'rgba(20,20,20,0.82)', border: 'rgba(248,113,113,0.4)', label: 'Error',           labelColor: '#fca5a5', Icon: XCircle },
+  thought:     { bg: 'var(--pragna-surface)', border: 'rgba(212,175,55,0.4)',  label: 'Thinking',        labelColor: 'var(--pragna-gold-soft)', Icon: Brain },
+  tool_call:   { bg: 'var(--pragna-surface)', border: 'rgba(52,211,153,0.4)',  label: 'Tool Call',       labelColor: '#34d399', Icon: Wrench },
+  tool_result: { bg: 'var(--pragna-surface)', border: 'rgba(251,191,36,0.35)', label: 'Result',          labelColor: '#fbbf24', Icon: Upload },
+  confirm_required: { bg: 'var(--pragna-surface)', border: 'rgba(251,191,36,0.5)', label: 'Approval needed', labelColor: '#fbbf24', Icon: AlertTriangle },
+  done:        { bg: 'var(--pragna-surface)', border: 'rgba(52,211,153,0.4)',  label: 'Done',            labelColor: '#6ee7b7', Icon: CheckCircle2 },
+  error:       { bg: 'var(--pragna-surface)', border: 'rgba(248,113,113,0.4)', label: 'Error',           labelColor: '#fca5a5', Icon: XCircle },
 }
 
 function LightningIcon({ size = 22, glow = false }) {
@@ -34,7 +34,7 @@ function LightningIcon({ size = 22, glow = false }) {
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#d4af37"
+      stroke="var(--pragna-accent)"
       strokeWidth={glow ? 1.6 : 2}
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -74,12 +74,12 @@ function ToolCallCard({ event }) {
         <span style={{ color: cfg.labelColor, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <Wrench size={13} /> {event.tool}
         </span>
-        <span style={{ color: '#a89878', fontSize: 11, marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <span style={{ color: 'var(--pragna-text-muted)', fontSize: 11, marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />} args
         </span>
       </div>
       {expanded && (
-        <pre style={{ margin: '8px 0 0', color: '#a89878', fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+        <pre style={{ margin: '8px 0 0', color: 'var(--pragna-text-muted)', fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
           {JSON.stringify(event.args, null, 2)}
         </pre>
       )}
@@ -111,12 +111,12 @@ function ToolResultCard({ event }) {
           <Upload size={13} /> {event.tool} result
         </span>
         {hasMore && (
-          <span style={{ color: '#a89878', fontSize: 11, marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ color: 'var(--pragna-text-muted)', fontSize: 11, marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />} {expanded ? 'less' : 'more'}
           </span>
         )}
       </div>
-      <pre style={{ margin: '6px 0 0', color: '#a89878', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+      <pre style={{ margin: '6px 0 0', color: 'var(--pragna-text-muted)', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
         {expanded ? event.content : (preview + (hasMore ? '...' : ''))}
       </pre>
     </div>
@@ -141,7 +141,7 @@ function ConfirmCard({ event, onDecision }) {
       </div>
       <pre style={{
         margin: '0 0 10px',
-        color: '#f0e6d3',
+        color: 'var(--pragna-text)',
         fontSize: 12,
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-all',
@@ -170,7 +170,7 @@ function ConfirmCard({ event, onDecision }) {
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(52,211,153,0.4)',
-              background: 'rgba(20,20,20,0.82)', color: '#34d399', fontWeight: 700, fontSize: 12, cursor: 'pointer',
+              background: 'var(--pragna-surface)', color: '#34d399', fontWeight: 700, fontSize: 12, cursor: 'pointer',
             }}
           >
             <CheckCircle2 size={14} /> Approve
@@ -180,7 +180,7 @@ function ConfirmCard({ event, onDecision }) {
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(248,113,113,0.4)',
-              background: 'rgba(20,20,20,0.82)', color: '#fca5a5', fontWeight: 700, fontSize: 12, cursor: 'pointer',
+              background: 'var(--pragna-surface)', color: '#fca5a5', fontWeight: 700, fontSize: 12, cursor: 'pointer',
             }}
           >
             <XCircle size={14} /> Reject
@@ -212,7 +212,7 @@ function EventBlock({ event, onDecision }) {
         <cfg.Icon size={13} /> {cfg.label}
       </div>
       <div style={{
-        color: event.type === 'done' ? '#f0e6d3' : '#f0e6d3',
+        color: event.type === 'done' ? 'var(--pragna-text)' : 'var(--pragna-text)',
         fontSize: 14,
         lineHeight: 1.65,
         whiteSpace: 'pre-wrap',
@@ -228,11 +228,11 @@ function EventBlock({ event, onDecision }) {
 function ThinkingDots() {
   return (
     <div style={{ display: 'flex', gap: 5, padding: '10px 0', alignItems: 'center' }}>
-      <span style={{ color: '#e5c76b', fontSize: 13 }}>Agent is thinking</span>
+      <span style={{ color: 'var(--pragna-gold-soft)', fontSize: 13 }}>Agent is thinking</span>
       {[0, 1, 2].map(i => (
         <span key={i} style={{
           width: 6, height: 6, borderRadius: '50%',
-          background: '#d4af37',
+          background: 'var(--pragna-accent)',
           display: 'inline-block',
           animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
         }} />
@@ -318,36 +318,36 @@ export default function AgentPanel() {
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
-      background: '#0a0a0a',
-      color: '#f0e6d3',
+      background: 'var(--pragna-bg)',
+      color: 'var(--pragna-text)',
       fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
     }}>
       {/* Header */}
       <div style={{
         padding: '18px 24px 14px',
-        borderBottom: '1px solid #2d2a24',
+        borderBottom: '1px solid var(--pragna-border)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
           <LightningIcon size={22} />
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#f0e6d3' }}>Pragna Code</h2>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--pragna-text)' }}>Pragna Code</h2>
           <span style={{
             padding: '3px 11px',
             borderRadius: 999,
             background: 'rgba(212,175,55,0.14)',
             border: '1px solid rgba(212,175,55,0.3)',
-            color: '#d4af37',
+            color: 'var(--pragna-accent)',
             fontSize: 11,
             fontWeight: 700,
             letterSpacing: '0.6px',
           }}>AGENT</span>
         </div>
-        <p style={{ margin: 0, color: '#a89878', fontSize: 13 }}>
+        <p style={{ margin: 0, color: 'var(--pragna-text-muted)', fontSize: 13 }}>
           Agentic AI that reads, writes, and runs code autonomously via Ollama
         </p>
       </div>
 
       {/* Mode selector */}
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid #2d2a24' }}>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--pragna-border)' }}>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {MODES.map(mode => (
             <button
@@ -357,11 +357,11 @@ export default function AgentPanel() {
               style={{
                 padding: '6px 12px',
                 borderRadius: 999,
-                border: selectedMode === mode.id ? '1px solid rgba(212,175,55,0.5)' : '1px solid #2d2a24',
+                border: selectedMode === mode.id ? '1px solid rgba(212,175,55,0.5)' : '1px solid var(--pragna-border)',
                 background: selectedMode === mode.id
                   ? 'linear-gradient(135deg, rgba(212,175,55,0.22), rgba(184,134,11,0.12))'
-                  : 'rgba(20,20,20,0.82)',
-                color: selectedMode === mode.id ? '#e5c76b' : '#a89878',
+                  : 'var(--pragna-surface)',
+                color: selectedMode === mode.id ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
                 fontSize: 12,
                 fontWeight: selectedMode === mode.id ? 700 : 400,
                 cursor: 'pointer',
@@ -376,8 +376,8 @@ export default function AgentPanel() {
           ))}
         </div>
         {activeMode && (
-          <p style={{ margin: '8px 0 0', color: '#a89878', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <activeMode.icon size={13} /> <strong style={{ color: '#d4af37' }}>{activeMode.label}:</strong> {activeMode.desc}
+          <p style={{ margin: '8px 0 0', color: 'var(--pragna-text-muted)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <activeMode.icon size={13} /> <strong style={{ color: 'var(--pragna-accent)' }}>{activeMode.label}:</strong> {activeMode.desc}
           </p>
         )}
       </div>
@@ -389,10 +389,10 @@ export default function AgentPanel() {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
               <LightningIcon size={34} glow />
             </div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#f0e6d3', marginBottom: 8 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--pragna-text)', marginBottom: 8 }}>
               Ready to work
             </div>
-            <div style={{ fontSize: 13, color: '#a89878', lineHeight: 1.7 }}>
+            <div style={{ fontSize: 13, color: 'var(--pragna-text-muted)', lineHeight: 1.7 }}>
               Type a task below. The agent will think, use tools, and complete the job autonomously.<br />
               Examples:<br />
               <span style={{ opacity: 0.85 }}>• "Review the backend code for security issues"</span><br />
@@ -412,11 +412,11 @@ export default function AgentPanel() {
       {/* Input area */}
       <div style={{
         padding: '14px 16px',
-        borderTop: '1px solid #2d2a24',
+        borderTop: '1px solid var(--pragna-border)',
       }}>
         {/* Context files input (collapsible) */}
         <details style={{ marginBottom: 8 }}>
-          <summary style={{ color: '#a89878', fontSize: 12, cursor: 'pointer', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <summary style={{ color: 'var(--pragna-text-muted)', fontSize: 12, cursor: 'pointer', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
             <Paperclip size={13} /> Context files (optional — paths to pre-load)
           </summary>
           <textarea
@@ -426,11 +426,11 @@ export default function AgentPanel() {
             rows={2}
             style={{
               width: '100%',
-              background: 'rgba(20,20,20,0.82)',
-              border: '1px solid #2d2a24',
+              background: 'var(--pragna-surface)',
+              border: '1px solid var(--pragna-border)',
               borderRadius: 8,
               padding: '8px 10px',
-              color: '#a89878',
+              color: 'var(--pragna-text-muted)',
               fontSize: 12,
               fontFamily: 'monospace',
               resize: 'vertical',
@@ -446,7 +446,7 @@ export default function AgentPanel() {
           gap: 8,
           padding: '14px 16px',
           borderRadius: 14,
-          background: 'rgba(20,20,20,0.82)',
+          background: 'var(--pragna-surface)',
           border: '1px solid rgba(212,175,55,0.18)',
           backdropFilter: 'blur(8px)',
           boxShadow: '0 12px 28px rgba(0,0,0,0.42)',
@@ -466,7 +466,7 @@ export default function AgentPanel() {
                 border: 'none',
                 borderRadius: 0,
                 padding: 0,
-                color: '#f0e6d3',
+                color: 'var(--pragna-text)',
                 fontSize: 14,
                 fontFamily: 'inherit',
                 resize: 'vertical',
@@ -488,7 +488,7 @@ export default function AgentPanel() {
                     padding: '9px 18px',
                     borderRadius: 10,
                     border: '1px solid rgba(248,113,113,0.4)',
-                    background: 'rgba(20,20,20,0.82)',
+                    background: 'var(--pragna-surface)',
                     color: '#fca5a5',
                     fontWeight: 700,
                     fontSize: 13,
@@ -509,8 +509,8 @@ export default function AgentPanel() {
                     padding: '9px 18px',
                     borderRadius: 10,
                     border: 'none',
-                    background: task.trim() ? 'linear-gradient(135deg, #e5c76b, #b8860b)' : '#2d2a24',
-                    color: task.trim() ? '#0a0a0a' : '#6b6558',
+                    background: task.trim() ? 'linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold-deep))' : 'var(--pragna-border)',
+                    color: task.trim() ? 'var(--pragna-bg)' : '#6b6558',
                     fontWeight: 700,
                     fontSize: 13,
                     cursor: task.trim() ? 'pointer' : 'not-allowed',
@@ -531,9 +531,9 @@ export default function AgentPanel() {
                     gap: 6,
                     padding: '6px 12px',
                     borderRadius: 8,
-                    border: '1px solid #2d2a24',
+                    border: '1px solid var(--pragna-border)',
                     background: 'transparent',
-                    color: '#a89878',
+                    color: 'var(--pragna-text-muted)',
                     fontSize: 12,
                     cursor: 'pointer',
                   }}
@@ -543,8 +543,8 @@ export default function AgentPanel() {
               )}
             </div>
           </div>
-          <p style={{ margin: 0, color: '#a89878', fontSize: 11.5, opacity: 0.75 }}>
-            Ctrl+Enter to run • Agent uses Ollama model: <strong style={{ color: '#a89878' }}>{'{OLLAMA_MODEL}'}</strong>
+          <p style={{ margin: 0, color: 'var(--pragna-text-muted)', fontSize: 11.5, opacity: 0.75 }}>
+            Ctrl+Enter to run • Agent uses Ollama model: <strong style={{ color: 'var(--pragna-text-muted)' }}>{'{OLLAMA_MODEL}'}</strong>
           </p>
         </div>
       </div>

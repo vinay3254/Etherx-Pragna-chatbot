@@ -11,10 +11,10 @@ const CHAT_MODE_ITEMS = [
 const GptModesPage = ({ chatMode, onSelectMode }) => {
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '48px', animation: 'fadeUp 0.4s ease', height: '100%' }}>
-      <h1 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: 700, color: '#f0e6d3' }}>
+      <h1 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: 700, color: 'var(--pragna-text)' }}>
         Pragna GPT Modes
       </h1>
-      <p style={{ margin: '0 0 30px 0', fontSize: '14.5px', color: '#a89878' }}>
+      <p style={{ margin: '0 0 30px 0', fontSize: '14.5px', color: 'var(--pragna-text-muted)' }}>
         Choose a specialized behavior profile for your assistant.
       </p>
 
@@ -23,12 +23,12 @@ const GptModesPage = ({ chatMode, onSelectMode }) => {
           const active = chatMode === mode.id
           
           const cardBg = active
-            ? 'linear-gradient(135deg, rgba(212,175,55,0.14), rgba(184,134,11,0.07))'
-            : 'rgba(20,20,20,0.82)'
+            ? 'linear-gradient(135deg, rgba(212,175,55,0.1), #000000)'
+            : '#000000'
           const cardBorder = active
             ? 'rgba(212,175,55,0.5)'
             : 'rgba(212,175,55,0.15)'
-          const cardTitleColor = active ? '#e5c76b' : '#f0e6d3'
+          const cardTitleColor = active ? 'var(--pragna-gold-soft)' : 'var(--pragna-text)'
 
           return (
             <button
@@ -49,7 +49,7 @@ const GptModesPage = ({ chatMode, onSelectMode }) => {
               <div style={{ fontSize: '16.5px', fontWeight: 700, color: cardTitleColor, marginBottom: '6px' }}>
                 {mode.label}
               </div>
-              <div style={{ fontSize: '13px', color: '#a89878' }}>
+              <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)' }}>
                 {mode.description}
               </div>
             </button>

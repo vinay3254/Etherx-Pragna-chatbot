@@ -298,7 +298,7 @@ const WorldMonitorDashboard = () => {
 
         <button
           onClick={fetchDashboardData}
-          className="mt-6 px-5 py-2.5 rounded-xl bg-gradient-to-br from-accent-400 to-accent-700 text-[#0a0a0a] text-sm font-bold shadow-premium-md transition-transform hover:scale-[1.02]"
+          className="mt-6 px-5 py-2.5 rounded-xl bg-gradient-to-br from-accent-400 to-accent-700 text-[var(--pragna-bg)] text-sm font-bold shadow-premium-md transition-transform hover:scale-[1.02]"
         >
           Refresh Data
         </button>

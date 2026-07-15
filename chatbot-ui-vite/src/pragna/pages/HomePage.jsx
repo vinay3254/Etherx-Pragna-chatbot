@@ -55,12 +55,12 @@ const HomePage = ({ onUsePrompt, userProfile }) => {
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '56px 40px', animation: 'fadeUp 0.4s ease', height: '100%' }}>
-      <h1 style={{ margin: '0 0 8px 0', fontSize: '34px', fontWeight: 700, color: '#f0e6d3', textAlign: 'center' }}>Hi {userName},</h1>
-      <div style={{ fontSize: '22px', color: '#a89878', marginBottom: '18px' }}>where should we start?</div>
-      <p style={{ margin: '0 0 28px 0', fontSize: '15px', color: '#a89878', textAlign: 'center' }}>Explore, create, or ask anything — I'm here to help.</p>
+      <h1 style={{ margin: '0 0 8px 0', fontSize: '34px', fontWeight: 700, color: 'var(--pragna-text)', textAlign: 'center' }}>Hi {userName},</h1>
+      <div style={{ fontSize: '22px', color: 'var(--pragna-text-muted)', marginBottom: '18px' }}>where should we start?</div>
+      <p style={{ margin: '0 0 28px 0', fontSize: '15px', color: 'var(--pragna-text-muted)', textAlign: 'center' }}>Explore, create, or ask anything — I'm here to help.</p>
 
       {/* Tiers slider */}
-      <div style={{ display: 'flex', gap: '8px', padding: '5px', borderRadius: '999px', background: 'rgba(20,20,20,0.82)', border: '1px solid #2d2a24', marginBottom: '36px' }}>
+      <div style={{ display: 'flex', gap: '8px', padding: '5px', borderRadius: '999px', background: 'var(--pragna-surface)', border: '1px solid var(--pragna-border)', marginBottom: '36px' }}>
         {tiers.map((t) => {
           const active = tier === t.key
           return (
@@ -74,15 +74,15 @@ const HomePage = ({ onUsePrompt, userProfile }) => {
                 padding: '9px 20px',
                 borderRadius: '999px',
                 border: 'none',
-                background: active ? 'linear-gradient(135deg, #e5c76b, #d4af37)' : 'transparent',
-                color: active ? '#0a0a0a' : '#a89878',
+                background: active ? 'linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-accent))' : 'transparent',
+                color: active ? 'var(--pragna-bg)' : 'var(--pragna-text-muted)',
                 fontSize: '13.5px',
                 fontWeight: 650,
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
               }}
             >
-              <span style={{ display: 'flex', color: active ? '#0a0a0a' : '#a89878' }}>
+              <span style={{ display: 'flex', color: active ? 'var(--pragna-bg)' : 'var(--pragna-text-muted)' }}>
                 {t.icon}
               </span>
               {t.label}
@@ -107,7 +107,7 @@ const HomePage = ({ onUsePrompt, userProfile }) => {
                 borderRadius: '18px',
                 textAlign: 'left',
                 cursor: 'pointer',
-                background: 'rgba(20,20,20,0.82)',
+                background: 'var(--pragna-surface)',
                 border: '1px solid rgba(212,175,55,0.18)',
                 backdropFilter: 'blur(8px)',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.28)',
@@ -118,8 +118,8 @@ const HomePage = ({ onUsePrompt, userProfile }) => {
               <span style={{ width: '42px', height: '42px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: card.bg, color: card.color }}>
                 {starterIcon(card.icon)}
               </span>
-              <span style={{ fontSize: '16px', fontWeight: 650, color: '#f0e6d3' }}>{card.title}</span>
-              <span style={{ fontSize: '13px', color: '#a89878' }}>{card.desc}</span>
+              <span style={{ fontSize: '16px', fontWeight: 650, color: 'var(--pragna-text)' }}>{card.title}</span>
+              <span style={{ fontSize: '13px', color: 'var(--pragna-text-muted)' }}>{card.desc}</span>
             </button>
           )
         })}
@@ -127,7 +127,7 @@ const HomePage = ({ onUsePrompt, userProfile }) => {
 
       {/* Your templates */}
       <div style={{ marginTop: '34px', width: '100%', maxWidth: 'min(90vw, 820px)' }}>
-        <div style={{ fontSize: '13px', fontWeight: 650, letterSpacing: '1px', color: '#a89878', textTransform: 'uppercase', marginBottom: '14px' }}>
+        <div style={{ fontSize: '13px', fontWeight: 650, letterSpacing: '1px', color: 'var(--pragna-text-muted)', textTransform: 'uppercase', marginBottom: '14px' }}>
           Your templates
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 260px))', gap: '16px' }}>
@@ -144,7 +144,7 @@ const HomePage = ({ onUsePrompt, userProfile }) => {
                 borderRadius: '18px',
                 textAlign: 'left',
                 cursor: 'pointer',
-                background: 'rgba(20,20,20,0.82)',
+                background: 'var(--pragna-surface)',
                 border: '1px solid rgba(212,175,55,0.18)',
                 backdropFilter: 'blur(8px)',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.28)',
@@ -159,13 +159,13 @@ const HomePage = ({ onUsePrompt, userProfile }) => {
                   deleteTemplate(tpl.id)
                 }}
                 title="Delete template"
-                style={{ position: 'absolute', top: '12px', right: '12px', width: '22px', height: '22px', borderRadius: '6px', border: 'none', background: 'transparent', color: '#a89878', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+                style={{ position: 'absolute', top: '12px', right: '12px', width: '22px', height: '22px', borderRadius: '6px', border: 'none', background: 'transparent', color: 'var(--pragna-text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
               >
                 ✕
               </button>
-              <span style={{ fontSize: '16px', fontWeight: 650, color: '#f0e6d3' }}>{tpl.title}</span>
-              <span style={{ fontSize: '13px', color: '#a89878', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{tpl.prompt}</span>
+              <span style={{ fontSize: '16px', fontWeight: 650, color: 'var(--pragna-text)' }}>{tpl.title}</span>
+              <span style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{tpl.prompt}</span>
             </button>
           ))}
 
@@ -177,7 +177,7 @@ const HomePage = ({ onUsePrompt, userProfile }) => {
                 gap: '10px',
                 padding: '22px',
                 borderRadius: '18px',
-                background: 'rgba(20,20,20,0.82)',
+                background: 'var(--pragna-surface)',
                 border: '1px solid rgba(212,175,55,0.32)',
               }}
             >
@@ -186,14 +186,14 @@ const HomePage = ({ onUsePrompt, userProfile }) => {
                 value={newTemplateTitle}
                 onChange={(e) => setNewTemplateTitle(e.target.value)}
                 placeholder="Template name"
-                style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #2d2a24', background: '#1a1a1a', color: '#f0e6d3', fontSize: '13.5px' }}
+                style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontSize: '13.5px' }}
               />
               <textarea
                 value={newTemplatePrompt}
                 onChange={(e) => setNewTemplatePrompt(e.target.value)}
                 placeholder="Prompt text"
                 rows={3}
-                style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #2d2a24', background: '#1a1a1a', color: '#f0e6d3', fontSize: '13.5px', resize: 'vertical' }}
+                style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontSize: '13.5px', resize: 'vertical' }}
               />
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                 <button
@@ -202,7 +202,7 @@ const HomePage = ({ onUsePrompt, userProfile }) => {
                     setNewTemplateTitle('')
                     setNewTemplatePrompt('')
                   }}
-                  style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', background: 'transparent', color: '#a89878', fontSize: '13px', cursor: 'pointer' }}
+                  style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', background: 'transparent', color: 'var(--pragna-text-muted)', fontSize: '13px', cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
@@ -213,7 +213,7 @@ const HomePage = ({ onUsePrompt, userProfile }) => {
                     setNewTemplateTitle('')
                     setNewTemplatePrompt('')
                   }}
-                  style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #e5c76b, #b8860b)', color: '#0a0a0a', fontSize: '13px', fontWeight: 650, cursor: 'pointer' }}
+                  style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold-deep))', color: 'var(--pragna-bg)', fontSize: '13px', fontWeight: 650, cursor: 'pointer' }}
                 >
                   Save
                 </button>
@@ -234,10 +234,10 @@ const HomePage = ({ onUsePrompt, userProfile }) => {
                 cursor: 'pointer',
                 background: 'transparent',
                 border: '1px dashed rgba(212,175,55,0.3)',
-                color: '#a89878',
+                color: 'var(--pragna-text-muted)',
                 minHeight: '110px',
               }}
-              className="hover:border-accent-500/50 hover:text-[#e5c76b]"
+              className="hover:border-accent-500/50 hover:text-[var(--pragna-gold-soft)]"
             >
               + Add template
             </button>
@@ -245,7 +245,7 @@ const HomePage = ({ onUsePrompt, userProfile }) => {
         </div>
       </div>
 
-      <div style={{ marginTop: '34px', fontSize: '12.5px', color: '#a89878', opacity: 0.7 }}>
+      <div style={{ marginTop: '34px', fontSize: '12.5px', color: 'var(--pragna-text-muted)', opacity: 0.7 }}>
         Powered by advanced AI · Responses may vary · <span style={{ textDecoration: 'underline', cursor: 'pointer' }}>Privacy</span>
       </div>
     </div>

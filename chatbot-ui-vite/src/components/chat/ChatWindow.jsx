@@ -48,6 +48,7 @@ export default function ChatWindow() {
     personas,
     activePersonaId,
     setActivePersonaId,
+    sidebarOpen,
   } = useContext(ChatContext);
 
   const chat = chats.find((c) => c.id === activeChatId);
@@ -410,20 +411,20 @@ export default function ChatWindow() {
           {/* Hero */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '24px', marginBottom: '30px', flexWrap: 'wrap' }}>
             <div style={{ minWidth: '240px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 650, letterSpacing: '1.5px', color: '#a89878', textTransform: 'uppercase', marginBottom: '10px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 650, letterSpacing: '1.5px', color: 'var(--pragna-text-muted)', textTransform: 'uppercase', marginBottom: '10px' }}>
                 {greeting} {userName}
               </div>
-              <h1 style={{ margin: '0 0 12px 0', fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 700, color: '#f0e6d3', letterSpacing: '-1px', lineHeight: 1.1 }}>
+              <h1 style={{ margin: '0 0 12px 0', fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 700, color: 'var(--pragna-text)', letterSpacing: '-1px', lineHeight: 1.1 }}>
                 What are we<br />
-                <span style={{ background: 'linear-gradient(120deg, #e5c76b, #d4af37, #b8860b)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
+                <span style={{ background: 'linear-gradient(120deg, var(--pragna-gold-soft), var(--pragna-accent), var(--pragna-gold-deep))', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
                   building today?
                 </span>
               </h1>
-              <p style={{ margin: 0, fontSize: '15px', color: '#a89878', maxWidth: '440px', lineHeight: 1.5 }}>
+              <p style={{ margin: 0, fontSize: '15px', color: 'var(--pragna-text-muted)', maxWidth: '440px', lineHeight: 1.5 }}>
                 Explore, create, or ask anything — Pragna adapts to how you work.
               </p>
             </div>
-            <div style={{ width: '56px', height: '56px', flexShrink: 0, borderRadius: '16px', background: 'linear-gradient(135deg, #e5c76b, #b8860b)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0a0a0a', fontWeight: 800, fontSize: '24px', boxShadow: '0 12px 28px rgba(0,0,0,0.42), 0 0 42px rgba(212,175,55,0.30)' }}>
+            <div style={{ width: '56px', height: '56px', flexShrink: 0, borderRadius: '16px', background: 'linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold-deep))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--pragna-bg)', fontWeight: 800, fontSize: '24px', boxShadow: '0 12px 28px rgba(0,0,0,0.42), 0 0 42px rgba(212,175,55,0.30)' }}>
               P
             </div>
           </div>
@@ -447,16 +448,16 @@ export default function ChatWindow() {
                     fontWeight: 650,
                     letterSpacing: '0.6px',
                     cursor: 'pointer',
-                    border: active ? '1px solid rgba(212,175,55,0.55)' : '1px solid #2d2a24',
-                    background: active ? 'linear-gradient(135deg, rgba(212,175,55,0.22), rgba(184,134,11,0.12))' : 'rgba(20,20,20,0.82)',
-                    color: active ? '#e5c76b' : '#a89878',
+                    border: active ? '1px solid rgba(212,175,55,0.55)' : '1px solid var(--pragna-border)',
+                    background: active ? 'linear-gradient(135deg, rgba(212,175,55,0.22), rgba(184,134,11,0.12))' : 'var(--pragna-surface)',
+                    color: active ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
                     boxShadow: active ? '0 0 20px rgba(212,175,55,0.18)' : 'none',
                     transition: 'all 0.15s ease',
                     whiteSpace: 'nowrap',
                   }}
-                  className="hover:border-accent-500/50 hover:text-[#e5c76b]"
+                  className="hover:border-accent-500/50 hover:text-[var(--pragna-gold-soft)]"
                 >
-                  <span style={{ display: 'flex', width: '15px', height: '15px', color: active ? '#e5c76b' : '#a89878' }}>
+                  <span style={{ display: 'flex', width: '15px', height: '15px', color: active ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)' }}>
                     {starterIcon(mode.iconName)}
                   </span>
                   {mode.label.toUpperCase()}
@@ -482,7 +483,7 @@ export default function ChatWindow() {
                     borderRadius: '18px',
                     textAlign: 'left',
                     cursor: 'pointer',
-                    background: card.featured ? 'linear-gradient(135deg, rgba(212,175,55,0.14), rgba(20,20,20,0.85))' : 'rgba(20,20,20,0.82)',
+                    background: card.featured ? 'linear-gradient(135deg, rgba(212,175,55,0.08), #000000)' : '#000000',
                     border: `1px solid ${card.featured ? 'rgba(212,175,55,0.32)' : 'rgba(212,175,55,0.18)'}`,
                     backdropFilter: 'blur(8px)',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.28)',
@@ -491,12 +492,12 @@ export default function ChatWindow() {
                   }}
                   className="hover:translate-y-[-3px] hover:shadow-[0_20px_32px_rgba(0,0,0,0.50)] hover:border-accent-500/50"
                 >
-                  <span style={{ width: card.featured ? '48px' : '38px', height: card.featured ? '48px' : '38px', flexShrink: 0, borderRadius: '12px', display: 'flex', alignItems: 'center', justifycontent: 'center', justifyContent: 'center', background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.25)', color: '#d4af37' }}>
+                  <span style={{ width: card.featured ? '48px' : '38px', height: card.featured ? '48px' : '38px', flexShrink: 0, borderRadius: '12px', display: 'flex', alignItems: 'center', justifycontent: 'center', justifyContent: 'center', background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.25)', color: 'var(--pragna-accent)' }}>
                     {starterIcon(card.icon)}
                   </span>
                   <span style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
-                    <span style={{ fontSize: card.featured ? '18px' : '15px', fontWeight: 700, color: '#f0e6d3' }}>{card.title}</span>
-                    <span style={{ fontSize: '13px', color: '#a89878', lineHeight: 1.5 }}>{card.desc}</span>
+                    <span style={{ fontSize: card.featured ? '18px' : '15px', fontWeight: 700, color: 'var(--pragna-text)' }}>{card.title}</span>
+                    <span style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', lineHeight: 1.5 }}>{card.desc}</span>
                   </span>
                 </button>
               )
@@ -505,7 +506,7 @@ export default function ChatWindow() {
 
           {/* Recent Activity strip */}
           <div style={{ marginBottom: '24px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '1.5px', color: '#a89878', marginBottom: '12px' }}>
+            <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '1.5px', color: 'var(--pragna-text-muted)', marginBottom: '12px' }}>
               JUMP BACK IN
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -520,24 +521,24 @@ export default function ChatWindow() {
                     gap: '12px',
                     padding: '13px 18px',
                     borderRadius: '13px',
-                    background: 'rgba(20,20,20,0.6)',
-                    border: '1px solid #2d2a24',
+                    background: 'var(--pragna-surface-2)',
+                    border: '1px solid var(--pragna-border)',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                   }}
-                  className="hover:border-accent-500/30 hover:bg-[#141414]"
+                  className="hover:border-accent-500/30 hover:bg-[var(--pragna-surface)]"
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d4af37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.7 }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--pragna-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.7 }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                     <span style={{ fontSize: '14px', color: '#d8cbb0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {r.title || 'New chat'}
                     </span>
                   </div>
-                  <span style={{ fontSize: '12px', color: '#a89878', flexShrink: 0 }}>Active</span>
+                  <span style={{ fontSize: '12px', color: 'var(--pragna-text-muted)', flexShrink: 0 }}>Active</span>
                 </div>
               ))}
               {chats.length === 0 && (
-                <div style={{ padding: '16px', textAlign: 'center', color: '#a89878', border: '1px dashed #2d2a24', borderRadius: '13px', fontSize: '13px' }}>
+                <div style={{ padding: '16px', textAlign: 'center', color: 'var(--pragna-text-muted)', border: '1px dashed var(--pragna-border)', borderRadius: '13px', fontSize: '13px' }}>
                   No recent chats. Start one above!
                 </div>
               )}
@@ -555,17 +556,17 @@ export default function ChatWindow() {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%' }}>
       {/* Chat header (matches mockup) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 28px', borderBottom: '1px solid #2d2a24', background: 'rgba(10,10,10,0.5)', backdropFilter: 'blur(8px)', flexShrink: 0 }}>
-        <div style={{ fontSize: '15px', fontWeight: 650, color: '#f0e6d3' }}>{chatTitle}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '5px 13px', borderRadius: '999px', background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.22)', fontSize: '12px', fontWeight: 600, color: '#d4af37', letterSpacing: '0.4px' }}>
-          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#d4af37', boxShadow: '0 0 8px rgba(212,175,55,0.8)' }}></span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: sidebarOpen ? '14px 28px' : '14px 28px 14px 64px', borderBottom: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', backdropFilter: 'blur(8px)', flexShrink: 0 }}>
+        <div style={{ fontSize: '15px', fontWeight: 650, color: 'var(--pragna-text)' }}>{chatTitle}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '5px 13px', borderRadius: '999px', background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.22)', fontSize: '12px', fontWeight: 600, color: 'var(--pragna-accent)', letterSpacing: '0.4px' }}>
+          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--pragna-accent)', boxShadow: '0 0 8px rgba(212,175,55,0.8)' }}></span>
           {modeLabel} mode
         </div>
         <select
           value={activePersonaId || ''}
           onChange={(e) => setActivePersonaId(e.target.value || null)}
           title="Persona"
-          style={{ padding: '5px 10px', borderRadius: '999px', border: '1px solid #2d2a24', background: '#1a1a1a', color: '#d8cbb0', fontFamily: 'inherit', fontSize: '12px', cursor: 'pointer' }}
+          style={{ padding: '5px 10px', borderRadius: '999px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: '#d8cbb0', fontFamily: 'inherit', fontSize: '12px', cursor: 'pointer' }}
         >
           <option value="">No persona</option>
           {personas.map((p) => (
@@ -583,15 +584,15 @@ export default function ChatWindow() {
             gap: '6px',
             padding: '6px 14px',
             borderRadius: '999px',
-            border: '1px solid #2d2a24',
+            border: '1px solid var(--pragna-border)',
             background: 'transparent',
-            color: '#a89878',
+            color: 'var(--pragna-text-muted)',
             fontSize: '12.5px',
             fontWeight: 600,
             cursor: summarizing ? 'default' : 'pointer',
             opacity: summarizing ? 0.6 : 1,
           }}
-          className="hover:text-[#e5c76b] hover:border-accent-500/40"
+          className="hover:text-[var(--pragna-gold-soft)] hover:border-accent-500/40"
         >
           {summarizing ? 'Summarizing…' : 'Summarize'}
         </button>

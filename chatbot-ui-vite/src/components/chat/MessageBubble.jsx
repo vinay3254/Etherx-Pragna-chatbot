@@ -498,7 +498,7 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
     };
 
     return (
-      <div className="flex flex-col items-end gap-1.5 group animate-[fadeUp_0.3s_ease]">
+      <div className="flex flex-col items-end gap-1.5 group animate-[fadeUp_0.3s_ease]" style={{ fontFamily: "var(--pragna-chat-font)" }}>
         {isEditing ? (
           <div className="max-w-[78%] w-full flex flex-col gap-2">
             <textarea
@@ -589,7 +589,7 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
 
   // ── Assistant / error message ───────────────────────────────────────────
   return (
-    <div className="flex flex-col items-start animate-[fadeUp_0.3s_ease]">
+    <div className="flex flex-col items-start animate-[fadeUp_0.3s_ease]" style={{ fontFamily: "var(--pragna-chat-font)" }}>
       <div className="flex gap-3.5 max-w-[92%] min-w-0">
         {isError ? (
           <div
@@ -601,7 +601,7 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
         ) : (
           <div
             className="w-8 h-8 shrink-0 mt-0.5 rounded-[9px] flex items-center justify-center font-extrabold text-[13px] shadow-premium-sm"
-            style={{ background: "linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold-deep))", color: "#0a0a0a" }}
+            style={{ background: "linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold-deep))", color: "var(--pragna-bg)" }}
           >
             P
           </div>
@@ -619,7 +619,7 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
           ) : isError ? (
             <div
               className="min-w-0 rounded-[4px_18px_18px_18px] px-5 py-4 shadow-premium-sm"
-              style={{ background: "rgba(48,22,20,0.55)", border: "1px solid rgba(220,110,100,0.28)", backdropFilter: "blur(8px)" }}
+              style={{ background: "#2a1a18", border: "1px solid rgba(220,110,100,0.28)" }}
             >
               <div className="text-[14px] font-bold tracking-[0.3px] mb-1.5" style={{ color: "#e8a598" }}>
                 Something went wrong
