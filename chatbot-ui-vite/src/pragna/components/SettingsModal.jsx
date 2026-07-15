@@ -3,14 +3,12 @@ import { ChatContext } from '../../context/ChatContext'
 
 const SettingsModal = ({ isOpen, onClose, userProfile }) => {
   const [activeTab, setActiveTab] = useState('General')
-  const { theme, setTheme } = useContext(ChatContext)
+  const { chatFont, setChatFont } = useContext(ChatContext)
 
   // Settings States matching mockup
   const [userName, setUserName] = useState(() => userProfile?.username || localStorage.getItem('authUsername') || 'vianan')
-  const [nickname, setNickname] = useState('')
-  const [instructions, setInstructions] = useState('')
-  const [accent, setAccent] = useState('#d4af37')
-  const [chatFont, setChatFont] = useState('Default (Segoe UI)')
+  const [nickname, setNickname] = useState(() => localStorage.getItem('pragna_nickname') || '')
+  const [instructions, setInstructions] = useState(() => localStorage.getItem('pragna_instructions') || '')
 
   useEffect(() => {
     if (!isOpen) return
@@ -79,26 +77,18 @@ const SettingsModal = ({ isOpen, onClose, userProfile }) => {
     { label: 'General', icon: 'gear' },
   ]
 
-  const appearanceOpts = [
-    { key: 'system', icon: 'monitor' },
-    { key: 'light', icon: 'sun' },
-    { key: 'dark', icon: 'moon' },
-  ]
-
-  const accentOpts = ['#d4af37', '#e5c76b', '#b8860b', '#8a6d3b']
-
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0 }}></div>
-      <div style={{ position: 'relative', width: 'min(920px, 92vw)', height: 'min(680px, 88vh)', display: 'flex', borderRadius: '20px', overflow: 'hidden', background: '#141414', border: '1px solid rgba(212,175,55,0.2)', boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }}>
+      <div style={{ position: 'relative', width: 'min(920px, 92vw)', height: 'min(680px, 88vh)', display: 'flex', borderRadius: '20px', overflow: 'hidden', background: 'var(--pragna-surface)', border: '1px solid rgba(212,175,55,0.2)', boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }}>
         
         {/* Settings Left Nav */}
-        <div style={{ width: '232px', flexShrink: 0, padding: '22px 14px', background: 'rgba(10,10,10,0.5)', borderRight: '1px solid #2d2a24', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ width: '232px', flexShrink: 0, padding: '22px 14px', background: 'var(--pragna-surface-2)', borderRight: '1px solid var(--pragna-border)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <div style={{ display: 'flex', alignMeters: 'center', gap: '9px', padding: '8px 10px 18px 10px', alignItems: 'center' }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a89878" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.35-4.35"></path></svg>
-            <span style={{ fontSize: '13px', color: '#a89878', whiteSpace: 'nowrap' }}>Search settings</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--pragna-text-muted)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.35-4.35"></path></svg>
+            <span style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', whiteSpace: 'nowrap' }}>Search settings</span>
           </div>
-          <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '1px', color: '#a89878', padding: '0 10px 8px 10px' }}>SETTINGS</div>
+          <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '1px', color: 'var(--pragna-text-muted)', padding: '0 10px 8px 10px' }}>SETTINGS</div>
           {tabs.map((tab) => {
             const active = activeTab === tab.label
             return (
@@ -113,14 +103,14 @@ const SettingsModal = ({ isOpen, onClose, userProfile }) => {
                   borderRadius: '10px',
                   border: 'none',
                   background: active ? 'linear-gradient(135deg, rgba(212,175,55,0.16), rgba(184,134,11,0.08))' : 'transparent',
-                  color: active ? '#e5c76b' : '#c9bda2',
+                  color: active ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-soft)',
                   fontSize: '13.5px',
                   fontWeight: active ? 650 : 500,
                   cursor: 'pointer',
                   textAlign: 'left',
                   transition: 'all 0.15s ease',
                 }}
-                className="hover:bg-[#1a1a1a] hover:text-[#e5c76b]"
+                className="hover:bg-[var(--pragna-surface-2)] hover:text-[var(--pragna-gold-soft)]"
               >
                 <span style={{ display: 'flex', width: '16px', height: '16px', flexShrink: 0 }}>
                   {gearIcon(tab.icon)}
@@ -143,7 +133,7 @@ const SettingsModal = ({ isOpen, onClose, userProfile }) => {
               borderRadius: '9px',
               border: 'none',
               background: 'transparent',
-              color: '#a89878',
+              color: 'var(--pragna-text-muted)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -154,7 +144,7 @@ const SettingsModal = ({ isOpen, onClose, userProfile }) => {
               right: '28px',
               zIndex: 10,
             }}
-            className="hover:bg-[#1a1a1a] hover:text-[#e5c76b]"
+            className="hover:bg-[var(--pragna-surface-2)] hover:text-[var(--pragna-gold-soft)]"
           >
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
               <path d="M18 6L6 18M6 6l12 12"></path>
@@ -164,116 +154,66 @@ const SettingsModal = ({ isOpen, onClose, userProfile }) => {
           {/* GENERAL / PROFILE TAB */}
           {activeTab === 'General' && (
             <div style={{ animation: 'fadeUp 0.15s ease' }}>
-              <h2 style={{ margin: '0 0 24px 0', fontSize: '20px', fontWeight: 700, color: '#f0e6d3' }}>Profile</h2>
+              <h2 style={{ margin: '0 0 24px 0', fontSize: '20px', fontWeight: 700, color: 'var(--pragna-text)' }}>Profile</h2>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '30px' }}>
-                <div style={{ fontSize: '13px', color: '#a89878', width: '110px', flexShrink: 0 }}>Avatar</div>
-                <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'linear-gradient(135deg, #2a2415, #1a1a1a)', border: '1.5px solid rgba(212,175,55,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d4af37', fontWeight: 700, fontSize: '19px' }}>
+                <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', width: '110px', flexShrink: 0 }}>Avatar</div>
+                <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'linear-gradient(135deg, #2a2415, var(--pragna-surface-2))', border: '1.5px solid rgba(212,175,55,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--pragna-accent)', fontWeight: 700, fontSize: '19px' }}>
                   {userInitial}
                 </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px' }}>
-                <div style={{ fontSize: '13px', color: '#a89878', width: '110px', flexShrink: 0 }}>Full name</div>
+                <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', width: '110px', flexShrink: 0 }}>Full name</div>
                 <input
                   value={userName}
                   onChange={(e) => {
                     setUserName(e.target.value)
                     localStorage.setItem('authUsername', e.target.value)
                   }}
-                  style={{ flex: 1, padding: '11px 14px', borderRadius: '10px', border: '1px solid #2d2a24', background: '#1a1a1a', color: '#f0e6d3', fontFamily: 'inherit', fontSize: '14px' }}
+                  style={{ flex: 1, padding: '11px 14px', borderRadius: '10px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '14px' }}
                 />
               </div>
 
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px', marginBottom: '30px' }}>
-                <div style={{ fontSize: '13px', color: '#a89878', width: '110px', flexShrink: 0, paddingTop: '11px' }}>Nickname</div>
+                <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', width: '110px', flexShrink: 0, paddingTop: '11px' }}>Nickname</div>
                 <input
                   value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
+                  onChange={(e) => {
+                    setNickname(e.target.value)
+                    localStorage.setItem('pragna_nickname', e.target.value)
+                  }}
                   placeholder="What should Pragna call you?"
-                  style={{ flex: 1, padding: '11px 14px', borderRadius: '10px', border: '1px solid #2d2a24', background: '#1a1a1a', color: '#f0e6d3', fontFamily: 'inherit', fontSize: '14px' }}
+                  style={{ flex: 1, padding: '11px 14px', borderRadius: '10px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '14px' }}
                 />
               </div>
 
               <div style={{ marginBottom: '30px' }}>
-                <div style={{ fontSize: '14px', fontWeight: 650, color: '#f0e6d3', marginBottom: '4px' }}>Instructions for Pragna</div>
-                <p style={{ margin: '0 0 12px 0', fontSize: '12.5px', color: '#a89878' }}>Pragna keeps these in mind across chats.</p>
+                <div style={{ fontSize: '14px', fontWeight: 650, color: 'var(--pragna-text)', marginBottom: '4px' }}>Instructions for Pragna</div>
+                <p style={{ margin: '0 0 12px 0', fontSize: '12.5px', color: 'var(--pragna-text-muted)' }}>Pragna keeps these in mind across chats.</p>
                 <textarea
                   value={instructions}
-                  onChange={(e) => setInstructions(e.target.value)}
+                  onChange={(e) => {
+                    setInstructions(e.target.value)
+                    localStorage.setItem('pragna_instructions', e.target.value)
+                  }}
                   placeholder="e.g. I primarily code in Python (not a beginner)"
                   rows="3"
-                  style={{ width: '100%', resize: 'vertical', padding: '13px 14px', borderRadius: '12px', border: '1px solid #2d2a24', background: '#1a1a1a', color: '#f0e6d3', fontFamily: 'inherit', fontSize: '14px', lineHeight: 1.5 }}
+                  style={{ width: '100%', resize: 'vertical', padding: '13px 14px', borderRadius: '12px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '14px', lineHeight: 1.5 }}
                 />
               </div>
 
-              <div style={{ height: '1px', background: '#2d2a24', marginBottom: '26px' }}></div>
+              <div style={{ height: '1px', background: 'var(--pragna-border)', marginBottom: '26px' }}></div>
 
-              <h3 style={{ margin: '0 0 18px 0', fontSize: '15px', fontWeight: 700, color: '#f0e6d3' }}>Preferences</h3>
-
-              {/* Appearance selection */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '22px' }}>
-                <div style={{ fontSize: '13px', color: '#a89878', width: '110px', flexShrink: 0 }}>Appearance</div>
-                <div style={{ display: 'flex', gap: '4px', padding: '4px', borderRadius: '11px', background: '#1a1a1a', border: '1px solid #2d2a24' }}>
-                  {appearanceOpts.map((opt) => {
-                    const active = theme === opt.key
-                    return (
-                      <button
-                        key={opt.key}
-                        onClick={() => setTheme(opt.key)}
-                        style={{
-                          width: '40px',
-                          height: '32px',
-                          borderRadius: '8px',
-                          border: 'none',
-                          background: active ? 'rgba(212,175,55,0.18)' : 'transparent',
-                          color: active ? '#e5c76b' : '#a89878',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        {gearIcon(opt.icon)}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Accent selection */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '22px' }}>
-                <div style={{ fontSize: '13px', color: '#a89878', width: '110px', flexShrink: 0 }}>Accent color</div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {accentOpts.map((hex) => {
-                    const active = accent === hex
-                    return (
-                      <button
-                        key={hex}
-                        onClick={() => setAccent(hex)}
-                        style={{
-                          width: '26px',
-                          height: '26px',
-                          borderRadius: '50%',
-                          border: `2px solid ${active ? '#f0e6d3' : 'transparent'}`,
-                          background: hex,
-                          cursor: 'pointer',
-                          padding: 0,
-                        }}
-                      />
-                    )
-                  })}
-                </div>
-              </div>
+              <h3 style={{ margin: '0 0 18px 0', fontSize: '15px', fontWeight: 700, color: 'var(--pragna-text)' }}>Preferences</h3>
 
               {/* Font selection */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                <div style={{ fontSize: '13px', color: '#a89878', width: '110px', flexShrink: 0 }}>Chat font</div>
+                <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', width: '110px', flexShrink: 0 }}>Chat font</div>
                 <select
                   value={chatFont}
                   onChange={(e) => setChatFont(e.target.value)}
-                  style={{ padding: '10px 14px', borderRadius: '10px', border: '1px solid #2d2a24', background: '#1a1a1a', color: '#f0e6d3', fontFamily: 'inherit', fontSize: '13.5px', cursor: 'pointer' }}
+                  style={{ padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '13.5px', cursor: 'pointer' }}
                 >
                   <option>Default (Segoe UI)</option>
                   <option>Serif</option>
