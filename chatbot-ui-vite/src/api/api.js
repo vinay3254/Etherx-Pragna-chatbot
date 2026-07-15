@@ -19,33 +19,32 @@ const _csvToList = (value) =>
     .filter(Boolean);
 
 const _resolveModelProfileRouting = () => {
+  // When VITE_MODEL_PROFILE_*_KEY isn't configured at build time, send no
+  // override at all (undefined keys are dropped by JSON.stringify) so the
+  // backend's own DEFAULT_MODEL_KEY/DEFAULT_MODEL_FALLBACKS chain applies -
+  // never hardcode a specific model here, since one that isn't actually
+  // available on the deployed backend breaks every chat request silently.
   const rawProfile = (localStorage.getItem("pragna_model_profile") || "basic").toLowerCase();
   const profile = rawProfile === "instant" ? "basic" : rawProfile === "expert" ? "pro" : rawProfile;
 
-  const instantOverride =
-    import.meta.env.VITE_MODEL_PROFILE_LIGHT_KEY || "ollama:qwen3-vl:8b";
+  const instantOverride = import.meta.env.VITE_MODEL_PROFILE_LIGHT_KEY || undefined;
   const instantFallbacks =
     _csvToList(import.meta.env.VITE_MODEL_PROFILE_LIGHT_FALLBACKS) || [];
 
-  const expertOverride =
-    import.meta.env.VITE_MODEL_PROFILE_HEAVY_KEY || "ollama:qwen3-vl:8b";
+  const expertOverride = import.meta.env.VITE_MODEL_PROFILE_HEAVY_KEY || undefined;
   const expertFallbacks =
     _csvToList(import.meta.env.VITE_MODEL_PROFILE_HEAVY_FALLBACKS) || [];
 
   if (profile === "pro") {
     return {
       model_override: expertOverride,
-      fallback_models: expertFallbacks.length
-        ? expertFallbacks
-        : ["ollama:qwen3-vl:8b"],
+      fallback_models: expertFallbacks.length ? expertFallbacks : undefined,
     };
   }
 
   return {
     model_override: instantOverride,
-    fallback_models: instantFallbacks.length
-      ? instantFallbacks
-      : ["ollama:qwen3-vl:8b"],
+    fallback_models: instantFallbacks.length ? instantFallbacks : undefined,
   };
 };
 
