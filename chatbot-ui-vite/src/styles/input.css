@@ -16,7 +16,7 @@
   align-items: center;
   gap: 8px;
   background: rgba(26, 26, 26, 0.8);
-  border: 1px solid #2d2a24;
+  border: 1px solid var(--pragna-border);
   border-radius: 6px;
   padding: 6px 10px;
   flex-shrink: 0;

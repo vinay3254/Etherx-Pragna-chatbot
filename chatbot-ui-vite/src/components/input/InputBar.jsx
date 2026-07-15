@@ -692,7 +692,7 @@ export default function InputBar() {
               left: 0,
               right: 0,
               marginBottom: '8px',
-              background: '#141414',
+              background: 'var(--pragna-surface)',
               border: '1px solid rgba(212,175,55,0.22)',
               borderRadius: '10px',
               boxShadow: '0 10px 24px rgba(0,0,0,0.5)',
@@ -722,10 +722,10 @@ export default function InputBar() {
                   textAlign: 'left',
                   borderRadius: '7px',
                 }}
-                className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+                className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
               >
-                <span style={{ fontWeight: 650, color: '#e5c76b' }}>{cmd.usage}</span>
-                <span style={{ color: '#a89878', fontSize: '12px' }}>{cmd.description}</span>
+                <span style={{ fontWeight: 650, color: 'var(--pragna-gold-soft)' }}>{cmd.usage}</span>
+                <span style={{ color: 'var(--pragna-text-muted)', fontSize: '12px' }}>{cmd.description}</span>
               </button>
             ))}
           </div>
@@ -735,11 +735,11 @@ export default function InputBar() {
         {attachments.length > 0 && (
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
             {attachments.map((att, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 10px', borderRadius: '8px', background: '#1a1a1a', border: '1px solid #2d2a24', fontSize: '12px' }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 10px', borderRadius: '8px', background: 'var(--pragna-surface-2)', border: '1px solid var(--pragna-border)', fontSize: '12px' }}>
                 {att.type === "image" && att.previewUrl ? (
                   <img src={att.previewUrl} alt={att.name} style={{ width: '20px', height: '20px', objectFit: 'cover', borderRadius: '4px' }} />
                 ) : (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a89878" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pragna-text-muted)" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                 )}
                 <span style={{ color: '#d8cbb0', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name}</span>
                 <button onClick={() => removeAttachment(i)} style={{ border: 'none', background: 'transparent', color: '#ff6b6b', cursor: 'pointer', fontSize: '11px' }}>✕</button>
@@ -755,7 +755,7 @@ export default function InputBar() {
             gap: '10px',
             padding: '10px 12px',
             borderRadius: '20px',
-            background: 'rgba(20,20,20,0.82)',
+            background: 'var(--pragna-surface)',
             border: `1px solid ${inputBorder}`,
             backdropFilter: 'blur(8px)',
             boxShadow: '0 12px 28px rgba(0,0,0,0.42)',
@@ -774,14 +774,14 @@ export default function InputBar() {
                 borderRadius: '12px',
                 border: 'none',
                 background: '#222222',
-                color: '#a89878',
+                color: 'var(--pragna-text-muted)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: 'all 0.15s ease',
               }}
-              className="hover:text-[#e5c76b] hover:bg-[#1a1a1a]"
+              className="hover:text-[var(--pragna-gold-soft)] hover:bg-[var(--pragna-surface-2)]"
             >
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
                 <path d="M12 5v14M5 12h14"></path>
@@ -796,7 +796,7 @@ export default function InputBar() {
                   left: 0,
                   zIndex: 50,
                   width: '160px',
-                  background: '#141414',
+                  background: 'var(--pragna-surface)',
                   border: '1px solid rgba(212,175,55,0.22)',
                   borderRadius: '10px',
                   boxShadow: '0 10px 24px rgba(0,0,0,0.5)',
@@ -823,7 +823,7 @@ export default function InputBar() {
                       textAlign: 'left',
                       borderRadius: '7px',
                     }}
-                    className="hover:bg-[#1e1a10] hover:text-[#e5c76b]"
+                    className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
                   >
                     {item.label}
                   </button>
@@ -857,8 +857,8 @@ export default function InputBar() {
               resize: 'none',
               border: 'none',
               background: 'transparent',
-              color: '#f0e6d3',
-              fontFamily: 'inherit',
+              color: 'var(--pragna-text)',
+              fontFamily: 'var(--pragna-chat-font)',
               fontSize: '15px',
               lineHeight: 1.5,
               padding: '10px 4px',
@@ -880,14 +880,14 @@ export default function InputBar() {
               borderRadius: '12px',
               border: 'none',
               background: recording ? 'rgba(220,100,100,0.2)' : 'transparent',
-              color: recording ? '#ff6b6b' : '#a89878',
+              color: recording ? '#ff6b6b' : 'var(--pragna-text-muted)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all 0.15s ease',
             }}
-            className="hover:text-[#e5c76b] hover:bg-[#1a1a1a]"
+            className="hover:text-[var(--pragna-gold-soft)] hover:bg-[var(--pragna-surface-2)]"
           >
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
@@ -906,8 +906,8 @@ export default function InputBar() {
               flexShrink: 0,
               borderRadius: '12px',
               border: 'none',
-              background: 'linear-gradient(135deg, #e5c76b, #b8860b)',
-              color: '#0a0a0a',
+              background: 'linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold-deep))',
+              color: 'var(--pragna-bg)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -923,7 +923,7 @@ export default function InputBar() {
             </svg>
           </button>
         </div>
-        <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '11.5px', color: '#a89878', opacity: 0.6 }}>
+        <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '11.5px', color: 'var(--pragna-text-muted)', opacity: 0.6 }}>
           Pragna can make mistakes. Verify important information.
         </div>
       </div>
