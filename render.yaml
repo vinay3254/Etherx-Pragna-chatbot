@@ -3,6 +3,7 @@ services:
   - type: web
     name: etherx-backend
     runtime: python
+    plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     # Render injects $PORT at runtime and requires the service to bind to it -
@@ -70,6 +71,7 @@ services:
   - type: web
     name: etherx-frontend
     runtime: static
+    plan: free
     rootDir: chatbot-ui-vite
     buildCommand: npm install && npm run build
     staticPublishPath: dist
