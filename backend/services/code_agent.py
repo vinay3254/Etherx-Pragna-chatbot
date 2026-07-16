@@ -419,17 +419,22 @@ def build_preview(tool_name: str, args: dict, root: Path) -> str:
 # ─── Ollama LLM call ─────────────────────────────────────────────────────────
 
 def _call_ollama(messages: list, stream: bool = False):
-    """Call Ollama /api/chat endpoint."""
-    url = f"{config.OLLAMA_API_URL.rstrip('/')}/api/chat"
+    """Call Ollama's OpenAI-compatible /v1/chat/completions endpoint.
+
+    Works against both a local `ollama serve` daemon and Ollama's hosted
+    cloud API (https://ollama.com) - the native /api/chat endpoint returns
+    410 Gone against the cloud API, it's local-daemon-only. Both callers in
+    this file pass stream=False, so response shape is always the
+    non-streaming OpenAI format: choices[0].message.content.
+    """
+    url = f"{config.OLLAMA_API_URL.rstrip('/')}/v1/chat/completions"
     model = config.OLLAMA_MODEL
     payload = {
         "model": model,
         "messages": messages,
         "stream": stream,
-        "options": {
-            "temperature": 0.3,
-            "num_ctx": 8192,
-        },
+        "temperature": 0.3,
+        "think": False,  # disable thinking mode for qwen3/deepseek-r1 models
     }
     headers = {}
     if config.OLLAMA_API_KEY:
@@ -588,7 +593,7 @@ def _agent_loop(session_id: str) -> Generator[str, None, None]:
         try:
             resp = _call_ollama(messages, stream=False)
             resp_data = resp.json()
-            assistant_text = resp_data.get("message", {}).get("content", "").strip()
+            assistant_text = (resp_data["choices"][0]["message"].get("content") or "").strip()
         except Exception as e:
             yield _sse({"type": "error", "content": f"Ollama error: {e}"})
             AGENT_SESSIONS.pop(session_id, None)
@@ -670,7 +675,7 @@ def agent_chat(task: str, mode: str = "general", history: list = None) -> dict:
     try:
         resp = _call_ollama(messages, stream=False)
         resp_data = resp.json()
-        content = resp_data.get("message", {}).get("content", "").strip()
+        content = (resp_data["choices"][0]["message"].get("content") or "").strip()
         return {"response": content, "mode": mode}
     except Exception as e:
         return {"response": f"Agent error: {e}", "mode": mode}

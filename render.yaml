@@ -27,28 +27,34 @@ services:
                                    # candidates below, so the non-:cloud ones
                                    # (Miku, Jenteck-GPT) will fail until then.
       - key: OLLAMA_MODEL
-        value: qwen3-coder-next:cloud # used by the agent subsystem
+        value: nemotron-3-super:cloud # used by the agent subsystem
                                        # (services/code_agent.py) and the
                                        # /api/test-ollama diagnostic route,
                                        # not by the main chat path in
                                        # 'standard' mode (that uses
                                        # DEFAULT_MODEL_KEY below).
+                                       # NOTE: qwen3-coder-next:cloud was
+                                       # removed from Ollama's cloud catalog
+                                       # (started returning 410 Gone) - if
+                                       # this model also disappears someday,
+                                       # check ollama.com/search?c=cloud for
+                                       # a current replacement.
       - key: OLLAMA_API_KEY
         sync: false # REQUIRED: your Ollama Cloud API key from
                      # ollama.com/settings/keys. Authenticates requests to
                      # https://ollama.com for :cloud models.
       - key: DEFAULT_MODEL_KEY
-        value: ollama:qwen3-coder-next:cloud
+        value: ollama:nemotron-3-super:cloud
       - key: DEFAULT_MODEL_FALLBACKS
-        # Order: 2 real cloud models (both work with just OLLAMA_API_KEY,
-        # no VPS) -> Groq (needs GROQ_API_KEY) -> the two community models,
-        # which will fail until they're pulled on a self-hosted Ollama and
+        # Order: 1 real cloud model (works with just OLLAMA_API_KEY, no VPS)
+        # -> Groq (needs GROQ_API_KEY) -> the two community models, which
+        # will fail until they're pulled on a self-hosted Ollama and
         # OLLAMA_API_URL points there instead of ollama.com.
-        value: ollama:qwen3-coder-next:cloud,ollama:nemotron-3-super:cloud,groq:llama-3.1-8b-instant,ollama:Ravishka/Miku,ollama:jensonodigie/Jenteck-GPT
+        value: ollama:nemotron-3-super:cloud,groq:llama-3.1-8b-instant,ollama:Ravishka/Miku,ollama:jensonodigie/Jenteck-GPT
       - key: CLASSIFIER_MODEL_KEY
-        value: ollama:qwen3-coder-next:cloud
+        value: ollama:nemotron-3-super:cloud
       - key: CLASSIFIER_FALLBACKS
-        value: ollama:qwen3-coder-next:cloud,ollama:nemotron-3-super:cloud,groq:llama-3.1-8b-instant,ollama:Ravishka/Miku,ollama:jensonodigie/Jenteck-GPT
+        value: ollama:nemotron-3-super:cloud,groq:llama-3.1-8b-instant,ollama:Ravishka/Miku,ollama:jensonodigie/Jenteck-GPT
       - key: GROQ_API_KEY
         sync: false # RECOMMENDED: safety net if Ollama Cloud's free quota
                      # runs out mid-week. Free key at console.groq.com

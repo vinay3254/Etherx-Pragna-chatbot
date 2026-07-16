@@ -48,6 +48,7 @@ except ImportError:
 # ─── Config from env ─────────────────────────────────────────────────────────
 OLLAMA_URL   = os.getenv("OLLAMA_API_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "mistral")
+OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "")
 VERSION      = "1.0.0"
 
 # ─── ANSI Colors ─────────────────────────────────────────────────────────────
@@ -478,18 +479,25 @@ MAX_ITERS = 20
 
 # ─── Ollama call ─────────────────────────────────────────────────────────────
 def _call_ollama(messages: list) -> str:
-    """Call Ollama /api/chat endpoint non-streaming."""
-    url = f"{OLLAMA_URL.rstrip('/')}/api/chat"
+    """Call Ollama's OpenAI-compatible /v1/chat/completions endpoint
+    non-streaming. This path works against both a local `ollama serve`
+    daemon and Ollama's hosted cloud API (https://ollama.com) - the native
+    /api/chat endpoint returns 410 Gone against the cloud API, it's local-only.
+    """
+    url = f"{OLLAMA_URL.rstrip('/')}/v1/chat/completions"
     payload = {
         "model": OLLAMA_MODEL,
         "messages": messages,
-        "stream": False,
-        "options": {"temperature": 0.3, "num_ctx": 8192},
+        "temperature": 0.3,
+        "think": False,  # disable thinking mode for qwen3/deepseek-r1 models
     }
-    resp = requests.post(url, json=payload, timeout=120)
+    headers = {}
+    if OLLAMA_API_KEY:
+        headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
+    resp = requests.post(url, headers=headers, json=payload, timeout=120)
     resp.raise_for_status()
     data = resp.json()
-    return data.get("message", {}).get("content", "").strip()
+    return (data["choices"][0]["message"].get("content") or "").strip()
 
 def _extract_tool_call(text: str) -> Optional[dict]:
     m = re.search(r"<tool_call>\s*(\{.*?\})\s*</tool_call>", text, re.DOTALL)

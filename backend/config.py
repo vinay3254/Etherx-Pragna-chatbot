@@ -278,15 +278,6 @@ MODEL_REGISTRY = {
         'speed_tier': 'medium',
         'cost_tier': 'local',
     },
-    'ollama:qwen3-coder-next:cloud': {
-        'provider': 'ollama',
-        'model': 'qwen3-coder-next:cloud',
-        'display_name': 'Qwen3 Coder Next Cloud (Ollama)',
-        'open_weights': True,
-        'quality_tier': 'high',
-        'speed_tier': 'medium',
-        'cost_tier': 'local',
-    },
     'ollama:adithyak/mysql-index-advisor:latest': {
         'provider': 'ollama',
         'model': 'adithyak/mysql-index-advisor:latest',

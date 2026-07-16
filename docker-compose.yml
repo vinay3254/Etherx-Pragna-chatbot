@@ -46,14 +46,14 @@ services:
       LLM_PROVIDER: standard
       OLLAMA_ENABLED: 'True'
       OLLAMA_API_URL: https://ollama.com
-      OLLAMA_MODEL: qwen3-coder-next:cloud
+      OLLAMA_MODEL: nemotron-3-super:cloud
       OLLAMA_API_KEY: ${OLLAMA_API_KEY:?set OLLAMA_API_KEY in .env - get one at ollama.com/settings/keys}
       OLLAMA_TIMEOUT: '120'
 
-      DEFAULT_MODEL_KEY: ollama:qwen3-coder-next:cloud
-      DEFAULT_MODEL_FALLBACKS: ollama:qwen3-coder-next:cloud,ollama:nemotron-3-super:cloud,groq:llama-3.1-8b-instant
-      CLASSIFIER_MODEL_KEY: ollama:qwen3-coder-next:cloud
-      CLASSIFIER_FALLBACKS: ollama:qwen3-coder-next:cloud,ollama:nemotron-3-super:cloud,groq:llama-3.1-8b-instant
+      DEFAULT_MODEL_KEY: ollama:nemotron-3-super:cloud
+      DEFAULT_MODEL_FALLBACKS: ollama:nemotron-3-super:cloud,groq:llama-3.1-8b-instant
+      CLASSIFIER_MODEL_KEY: ollama:nemotron-3-super:cloud
+      CLASSIFIER_FALLBACKS: ollama:nemotron-3-super:cloud,groq:llama-3.1-8b-instant
 
       # Groq (Optional - safety net if Ollama Cloud's free quota runs out)
       GROQ_API_KEY: ${GROQ_API_KEY:-}
