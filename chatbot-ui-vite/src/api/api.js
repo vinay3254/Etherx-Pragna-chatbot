@@ -355,6 +355,13 @@ export const generateDocument = async ({ format, prompt, language = "en" }) => {
     }
     throw new Error(data?.error || "Document generation failed.");
   }
+  // download_url comes back as a relative path (e.g. /api/documents/download/x.docx).
+  // Frontend and backend are separate origins in production, so a relative URL
+  // would resolve against the frontend's own host instead of the backend - make
+  // it absolute here so every caller gets a working link automatically.
+  if (data?.download_url && !/^https?:\/\//i.test(data.download_url)) {
+    data.download_url = `${API_BASE}${data.download_url}`;
+  }
   return data;
 };
 
