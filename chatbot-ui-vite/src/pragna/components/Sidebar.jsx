@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useContext } from 'react'
-import { Folder, FolderPlus, MoreVertical, Edit2, Trash2, PanelLeftClose } from 'lucide-react'
+import { Folder, FolderPlus, MoreVertical, Edit2, Trash2, PanelLeftClose, ChevronDown } from 'lucide-react'
 import pragnaLogo from '../../assets/pragna-logo-full.png'
 import ChatManagementAPI from '../../api/chatManagement'
 import RecentItem from './RecentItem'
@@ -31,6 +31,24 @@ const Sidebar = ({
   const [folderMenuOpenId, setFolderMenuOpenId] = useState(null)
   const [folderRenameId, setFolderRenameId] = useState(null)
   const [folderRenameName, setFolderRenameName] = useState('')
+
+  // Collapsed state for the folder/recents sections in the sidebar list, so
+  // sections that aren't needed right now can be minimized out of the way.
+  // Keyed by folder id, plus the fixed 'recents' key for unfiled chats.
+  const [collapsedSections, setCollapsedSections] = useState(() => {
+    const saved = localStorage.getItem('pragna_collapsed_sections')
+    return saved ? new Set(JSON.parse(saved)) : new Set()
+  })
+
+  const toggleSection = (sectionId) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev)
+      if (next.has(sectionId)) next.delete(sectionId)
+      else next.add(sectionId)
+      localStorage.setItem('pragna_collapsed_sections', JSON.stringify([...next]))
+      return next
+    })
+  }
 
   // Menu popup states
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -588,15 +606,31 @@ ${turns}
                   />
                 </div>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 14px', position: 'relative' }}>
+                <div
+                  onClick={() => toggleSection(folder.id)}
+                  title={collapsedSections.has(folder.id) ? 'Expand folder' : 'Minimize folder'}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 14px', position: 'relative', cursor: 'pointer', borderRadius: '6px' }}
+                  className="hover:bg-[var(--pragna-surface-2)]"
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '11.5px', fontWeight: 700, letterSpacing: '1px', color: 'var(--pragna-text-muted)' }}>
+                    <ChevronDown
+                      size={12}
+                      style={{
+                        transform: collapsedSections.has(folder.id) ? 'rotate(-90deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.15s ease',
+                        flexShrink: 0,
+                      }}
+                    />
                     <Folder size={13} />
                     <span>{folder.name.toUpperCase()}</span>
                     <span style={{ color: '#6b6152' }}>({folderChats.length})</span>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setFolderMenuOpenId(folderMenuOpenId === folder.id ? null : folder.id)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setFolderMenuOpenId(folderMenuOpenId === folder.id ? null : folder.id)
+                    }}
                     style={{ padding: '2px', borderRadius: '4px', border: 'none', background: 'transparent', color: 'var(--pragna-text-muted)', cursor: 'pointer', display: 'flex' }}
                     aria-label={`Menu for ${folder.name}`}
                   >
@@ -604,8 +638,9 @@ ${turns}
                   </button>
                   {folderMenuOpenId === folder.id && (
                     <>
-                      <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setFolderMenuOpenId(null)} />
+                      <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={(e) => { e.stopPropagation(); setFolderMenuOpenId(null) }} />
                       <div
+                        onClick={(e) => e.stopPropagation()}
                         style={{
                           position: 'absolute',
                           right: '8px',
@@ -650,7 +685,7 @@ ${turns}
                 </div>
               )}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <div style={{ display: collapsedSections.has(folder.id) ? 'none' : 'flex', flexDirection: 'column', gap: '3px' }}>
                 {folderChats.map((chat) => (
                   renameDialogId === chat.id ? null : (
                     <RecentItem
@@ -692,7 +727,20 @@ ${turns}
             if (chatId) moveChatToFolder(chatId, null)
           }}
         >
-          <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: 'var(--pragna-text-muted)', padding: '0 14px 10px 14px' }}>
+          <div
+            onClick={() => toggleSection('recents')}
+            title={collapsedSections.has('recents') ? 'Expand recents' : 'Minimize recents'}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: 'var(--pragna-text-muted)', padding: '4px 14px', margin: '0 0 6px 0', cursor: 'pointer', borderRadius: '6px' }}
+            className="hover:bg-[var(--pragna-surface-2)]"
+          >
+            <ChevronDown
+              size={12}
+              style={{
+                transform: collapsedSections.has('recents') ? 'rotate(-90deg)' : 'rotate(0deg)',
+                transition: 'transform 0.15s ease',
+                flexShrink: 0,
+              }}
+            />
             RECENTS
           </div>
 
@@ -728,7 +776,7 @@ ${turns}
             </div>
           ) : null}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+          <div style={{ display: collapsedSections.has('recents') ? 'none' : 'flex', flexDirection: 'column', gap: '3px' }}>
             {unfiledChats.map((chat) => (
               renameDialogId === chat.id ? null : (
                 <RecentItem

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import {
   getDashboardGeoSummary,
   getPlatformStatus,
@@ -34,6 +35,39 @@ export default function GlobalDashboard() {
   const [search, setSearch] = useState("");
   const [schedulerStatus, setSchedulerStatus] = useState(null);
   const [schedulerActionLoading, setSchedulerActionLoading] = useState(false);
+
+  // Collapse/expand per-widget - same localStorage-backed Set pattern as the
+  // sidebar's folder/recents sections, so each widget's state survives reloads.
+  const [collapsedWidgets, setCollapsedWidgets] = useState(() => {
+    const saved = localStorage.getItem("pragna_dashboard_collapsed");
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
+
+  const toggleWidget = (widgetId) => {
+    setCollapsedWidgets((prev) => {
+      const next = new Set(prev);
+      if (next.has(widgetId)) next.delete(widgetId);
+      else next.add(widgetId);
+      localStorage.setItem("pragna_dashboard_collapsed", JSON.stringify([...next]));
+      return next;
+    });
+  };
+
+  const SectionHeader = ({ id, title, className = "" }) => (
+    <button
+      type="button"
+      onClick={() => toggleWidget(id)}
+      title={collapsedWidgets.has(id) ? "Expand" : "Minimize"}
+      className={`flex items-center gap-1.5 bg-transparent border-none p-0 cursor-pointer text-left ${className}`}
+    >
+      <ChevronDown
+        size={14}
+        className="shrink-0 text-[color:var(--pragna-text-muted)]"
+        style={{ transform: collapsedWidgets.has(id) ? "rotate(-90deg)" : "rotate(0deg)", transition: "transform 0.15s ease" }}
+      />
+      <h3 className="m-0 text-[15px] font-semibold text-[color:var(--pragna-text)]">{title}</h3>
+    </button>
+  );
 
   const refresh = async () => {
     setLoading(true);
@@ -225,7 +259,19 @@ export default function GlobalDashboard() {
       {schedulerStatus ? (
         <div className="glass-card mb-5 rounded-2xl px-5 py-4.5 shadow-premium-sm">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="m-0 text-sm font-bold text-[color:var(--pragna-text)]">RAG Scheduler</h2>
+            <button
+              type="button"
+              onClick={() => toggleWidget("scheduler")}
+              title={collapsedWidgets.has("scheduler") ? "Expand" : "Minimize"}
+              className="flex items-center gap-1.5 bg-transparent border-none p-0 cursor-pointer"
+            >
+              <ChevronDown
+                size={14}
+                className="text-[color:var(--pragna-text-muted)]"
+                style={{ transform: collapsedWidgets.has("scheduler") ? "rotate(-90deg)" : "rotate(0deg)", transition: "transform 0.15s ease" }}
+              />
+              <h2 className="m-0 text-sm font-bold text-[color:var(--pragna-text)]">RAG Scheduler</h2>
+            </button>
             <div className="flex gap-2">
               <button
                 onClick={handleForceUpdate}
@@ -243,6 +289,7 @@ export default function GlobalDashboard() {
               </button>
             </div>
           </div>
+          {!collapsedWidgets.has("scheduler") && (
           <div className="grid grid-cols-2 gap-3 text-xs text-[color:var(--pragna-text-muted)] md:grid-cols-4">
             <div>
               <div className="mb-1 text-[color:var(--pragna-text)] font-semibold">Last update</div>
@@ -261,6 +308,7 @@ export default function GlobalDashboard() {
               {typeof schedulerStatus.next_update_in_hours === "number" ? `${schedulerStatus.next_update_in_hours}h` : schedulerStatus.next_update_in_hours}
             </div>
           </div>
+          )}
         </div>
       ) : null}
 
@@ -302,9 +350,9 @@ export default function GlobalDashboard() {
 
       <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-[1.4fr_1fr]">
         <section className="glass-card rounded-2xl p-5 shadow-premium-sm">
-          <h3 className="m-0 mb-3.5 text-[15px] font-semibold text-[color:var(--pragna-text)]">
-            Geo Activity Map
-          </h3>
+          <SectionHeader id="geo-map" title="Geo Activity Map" className="mb-3.5" />
+          {!collapsedWidgets.has("geo-map") && (
+          <>
           <div className="relative h-[240px] overflow-hidden rounded-xl border border-border bg-[radial-gradient(circle_at_55%_45%,rgba(212,175,55,0.16),transparent_60%)] bg-surface">
             {markers.length === 0 ? (
               <div className="flex h-full items-center justify-center">
@@ -341,10 +389,13 @@ export default function GlobalDashboard() {
               </div>
             ))}
           </div>
+          </>
+          )}
         </section>
 
         <section className="glass-card flex flex-col gap-3 rounded-2xl p-5 shadow-premium-sm">
-          <h3 className="m-0 text-[15px] font-semibold text-[color:var(--pragna-text)]">Live Event Feed</h3>
+          <SectionHeader id="live-feed" title="Live Event Feed" />
+          {!collapsedWidgets.has("live-feed") && (
           <div className="flex max-h-[430px] flex-col gap-2 overflow-y-auto">
             {filteredEvents.length === 0 && !loading ? (
               <div className="py-2 text-xs text-[color:var(--pragna-text-muted)]">
@@ -383,13 +434,14 @@ export default function GlobalDashboard() {
               ))
             )}
           </div>
+          )}
         </section>
       </div>
 
       <section className="glass-card rounded-2xl p-5 shadow-premium-sm">
-        <h3 className="m-0 mb-2 text-[15px] font-semibold text-[color:var(--pragna-text)]">
-          World Monitor Integration
-        </h3>
+        <SectionHeader id="world-monitor" title="World Monitor Integration" className="mb-2" />
+        {!collapsedWidgets.has("world-monitor") && (
+        <>
         <p className="m-0 mb-3.5 text-[13.5px] leading-relaxed text-[color:var(--pragna-text-muted)]">
           Live strategic dashboard from worldmonitor.app integrated as an external
           launch because iframe embedding is restricted by the site security policy.
@@ -417,6 +469,8 @@ export default function GlobalDashboard() {
             <path d="M10 14L21 3" />
           </svg>
         </button>
+        </>
+        )}
       </section>
 
       <style>{`
