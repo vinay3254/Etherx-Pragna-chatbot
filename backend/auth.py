@@ -87,6 +87,39 @@ class AuthService:
 
         return None
 
+    @staticmethod
+    def request_password_reset(email):
+        """Generate a reset token and email it, if the address belongs to a
+        real account. Always call this the same way regardless of outcome -
+        callers should return an identical response either way so this
+        endpoint can't be used to enumerate registered emails.
+        """
+        user = db.get_user_by_email(email)
+        if not user:
+            return  # Deliberately silent - see docstring
+
+        token = db.create_password_reset_token(user['id'])
+        reset_url = f"{config.FRONTEND_URL}/reset-password?token={token}"
+
+        from services.email_service import send_password_reset_email
+        send_password_reset_email(user['email'], reset_url)
+
+    @staticmethod
+    def reset_password(token, new_password):
+        """Validate a reset token and set the new password. Returns error string or None."""
+        if len(new_password) < 8:
+            return "New password must be at least 8 characters"
+
+        token_row = db.get_valid_reset_token(token)
+        if not token_row:
+            return "This reset link is invalid or has expired"
+
+        if not db.update_password(token_row['user_id'], new_password):
+            return "Failed to update password"
+
+        db.mark_reset_token_used(token)
+        return None
+
 def require_auth(f):
     """Decorator to require authentication"""
     @wraps(f)

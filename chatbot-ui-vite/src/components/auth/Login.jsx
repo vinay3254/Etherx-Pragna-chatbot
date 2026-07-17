@@ -12,6 +12,10 @@ export default function Login({ onLoginSuccess }) {
   const [loading, setLoading] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [email, setEmail] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   // Initialize Vanta.js animation
   useEffect(() => {
@@ -122,6 +126,29 @@ export default function Login({ onLoginSuccess }) {
     }
   };
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    setResetLoading(true);
+    try {
+      await authAPI.forgotPassword(resetEmail);
+      // Always show the same success state regardless of whether the email
+      // is registered - the backend deliberately never reveals that.
+      setResetSent(true);
+    } catch (err) {
+      setError('Network error. Try again.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const backToLogin = () => {
+    setShowForgotPassword(false);
+    setResetSent(false);
+    setResetEmail('');
+    setError('');
+  };
+
   return (
     <div className="auth-container">
       <div ref={vantaRef} className="vanta-canvas"></div>
@@ -137,62 +164,121 @@ export default function Login({ onLoginSuccess }) {
       </div>
 
       <div className="auth-box">
-        <h1>{showRegister ? 'Create Account' : 'Welcome Back'}</h1>
+        {showForgotPassword ? (
+          <>
+            <h1>Reset Password</h1>
 
-        {error && <div className="auth-error">{error}</div>}
+            {error && <div className="auth-error">{error}</div>}
 
-        <form onSubmit={showRegister ? handleRegister : handleLogin}>
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            disabled={loading}
-          />
+            {resetSent ? (
+              <>
+                <p style={{ color: 'var(--pragna-text-muted, #a89878)', fontSize: '14px', lineHeight: 1.6, margin: '4px 0 20px 0' }}>
+                  If that email is registered, a password reset link has been sent. Check your inbox
+                  (and spam folder) - the link expires in 60 minutes.
+                </p>
+                <button type="button" onClick={backToLogin} className="auth-btn">
+                  Back to login
+                </button>
+              </>
+            ) : (
+              <form onSubmit={handleForgotPassword}>
+                <p style={{ color: 'var(--pragna-text-muted, #a89878)', fontSize: '13.5px', lineHeight: 1.5, margin: '4px 0 16px 0' }}>
+                  Enter your account email and we'll send you a link to reset your password.
+                </p>
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  required
+                  disabled={resetLoading}
+                />
+                <button type="submit" disabled={resetLoading} className="auth-btn">
+                  {resetLoading ? '...' : 'Send reset link'}
+                </button>
+              </form>
+            )}
 
-          {showRegister && (
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={loading}
-            />
-          )}
+            {!resetSent && (
+              <p className="auth-toggle">
+                <button type="button" onClick={backToLogin} disabled={resetLoading}>
+                  Back to login
+                </button>
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            <h1>{showRegister ? 'Create Account' : 'Welcome Back'}</h1>
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={loading}
-          />
+            {error && <div className="auth-error">{error}</div>}
 
-          {showRegister && (
-            <p className="password-hint">Min 8 characters</p>
-          )}
+            <form onSubmit={showRegister ? handleRegister : handleLogin}>
+              <input
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                disabled={loading}
+              />
 
-          <button type="submit" disabled={loading} className="auth-btn">
-            {loading ? '...' : showRegister ? 'Register' : 'Login'}
-          </button>
-        </form>
+              {showRegister && (
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+              )}
 
-        <p className="auth-toggle">
-          {showRegister ? 'Have an account?' : "Don't have an account?"}
-          <button
-            type="button"
-            onClick={() => {
-              setShowRegister(!showRegister);
-              setError('');
-            }}
-            disabled={loading}
-          >
-            {showRegister ? ' Login' : ' Register'}
-          </button>
-        </p>
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+              />
+
+              {showRegister && (
+                <p className="password-hint">Min 8 characters</p>
+              )}
+
+              {!showRegister && (
+                <p className="auth-toggle" style={{ margin: '-8px 0 4px 0', textAlign: 'right' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setShowForgotPassword(true); setError(''); }}
+                    disabled={loading}
+                  >
+                    Forgot password?
+                  </button>
+                </p>
+              )}
+
+              <button type="submit" disabled={loading} className="auth-btn">
+                {loading ? '...' : showRegister ? 'Register' : 'Login'}
+              </button>
+            </form>
+
+            <p className="auth-toggle">
+              {showRegister ? 'Have an account?' : "Don't have an account?"}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRegister(!showRegister);
+                  setError('');
+                }}
+                disabled={loading}
+              >
+                {showRegister ? ' Login' : ' Register'}
+              </button>
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

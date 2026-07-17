@@ -6,6 +6,13 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "chatbot-ui-vite"],
       "port": 5180
+    },
+    {
+      "name": "backend-dev",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["app.py"],
+      "cwd": "backend",
+      "port": 5001
     }
   ]
 }

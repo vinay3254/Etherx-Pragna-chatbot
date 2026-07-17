@@ -25,6 +25,18 @@ CORS_ALLOWED_ORIGINS = (
     else [origin.strip() for origin in _cors_origins_env.split(',') if origin.strip()]
 )
 
+# Frontend origin used to build links embedded in emails (e.g. the password
+# reset link). Falls back to localhost for local dev - set explicitly in
+# production so reset emails point at the real deployed frontend.
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5180').rstrip('/')
+
+# Resend (https://resend.com) for transactional email - password reset, etc.
+# Free tier, no SMTP setup needed. RESEND_FROM_EMAIL defaults to Resend's
+# shared sandbox sender, which works with no domain verification; set your
+# own verified sender once you've added a domain in Resend.
+RESEND_API_KEY = os.getenv('RESEND_API_KEY', '')
+RESEND_FROM_EMAIL = os.getenv('RESEND_FROM_EMAIL', 'Pragna-1 A <onboarding@resend.dev>')
+
 # Per-client-IP rate limit for the unauthenticated AI generation endpoints
 # (/api/images/generate, /api/documents/generate) - each call triggers an LLM
 # request and/or a disk write, so these need a cap independent of auth.

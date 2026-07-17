@@ -21,6 +21,26 @@ export const authAPI = {
     return response.json();
   },
 
+  // Request a password reset email
+  async forgotPassword(email) {
+    const response = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    return response.json();
+  },
+
+  // Complete a password reset using the token from the emailed link
+  async resetPassword(token, newPassword) {
+    const response = await fetch(`${API_BASE}/api/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, new_password: newPassword })
+    });
+    return response.json();
+  },
+
   // Verify token
   async verifyToken(token) {
     const response = await fetch(`${API_BASE}/api/auth/verify`, {

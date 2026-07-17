@@ -1,6 +1,7 @@
 import sqlite3
 import json
 import hashlib
+import secrets
 import bcrypt
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -92,6 +93,18 @@ class Database:
             )
         ''')
 
+        # Password reset tokens - single-use, short-lived
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                token TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                expires_at TIMESTAMP NOT NULL,
+                used BOOLEAN DEFAULT 0,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+        ''')
+
         conn.commit()
         conn.close()
     
@@ -173,7 +186,59 @@ class Database:
         deleted = c.rowcount > 0
         conn.close()
         return deleted
-    
+
+    def get_user_by_email(self, email):
+        """Get user by email"""
+        conn = self.get_connection()
+        c = conn.cursor()
+        c.execute('SELECT * FROM users WHERE email = ?', (email,))
+        user = c.fetchone()
+        conn.close()
+        return dict(user) if user else None
+
+    # PASSWORD RESET
+    def create_password_reset_token(self, user_id, ttl_minutes=60):
+        """Generate a single-use reset token, invalidating any earlier
+        unused tokens for this user first."""
+        conn = self.get_connection()
+        c = conn.cursor()
+        c.execute(
+            'UPDATE password_reset_tokens SET used = 1 WHERE user_id = ? AND used = 0',
+            (user_id,),
+        )
+        token = secrets.token_urlsafe(32)
+        expires_at = datetime.utcnow() + timedelta(minutes=ttl_minutes)
+        c.execute(
+            'INSERT INTO password_reset_tokens (token, user_id, expires_at) VALUES (?, ?, ?)',
+            (token, user_id, expires_at.isoformat()),
+        )
+        conn.commit()
+        conn.close()
+        return token
+
+    def get_valid_reset_token(self, token):
+        """Return the token row if it exists, is unused, and hasn't expired."""
+        conn = self.get_connection()
+        c = conn.cursor()
+        c.execute('SELECT * FROM password_reset_tokens WHERE token = ?', (token,))
+        row = c.fetchone()
+        conn.close()
+        if not row:
+            return None
+        row = dict(row)
+        if row['used']:
+            return None
+        if datetime.fromisoformat(row['expires_at']) < datetime.utcnow():
+            return None
+        return row
+
+    def mark_reset_token_used(self, token):
+        conn = self.get_connection()
+        c = conn.cursor()
+        c.execute('UPDATE password_reset_tokens SET used = 1 WHERE token = ?', (token,))
+        conn.commit()
+        conn.close()
+
     # CONVERSATION MANAGEMENT
     def create_conversation(self, user_id, title, language='en'):
         """Create new conversation"""

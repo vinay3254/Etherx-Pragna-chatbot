@@ -1976,6 +1976,48 @@ def verify_token():
         logger.error(f"Verify error: {e}")
         return jsonify({'error': 'Token verification failed'}), 500
 
+@app.route('/api/auth/forgot-password', methods=['POST'])
+def forgot_password():
+    """Request a password reset email. Always returns the same generic
+    response regardless of whether the email is registered, so this
+    endpoint can't be used to enumerate accounts."""
+    try:
+        data = request.json or {}
+        email = data.get('email', '').strip()
+        if not email:
+            return jsonify({'error': 'email is required'}), 400
+
+        auth_service.request_password_reset(email)
+
+        return jsonify({
+            'message': 'If that email is registered, a password reset link has been sent.'
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Forgot password error: {e}")
+        return jsonify({'error': 'Failed to process request'}), 500
+
+@app.route('/api/auth/reset-password', methods=['POST'])
+def reset_password():
+    """Complete a password reset using the token from the emailed link."""
+    try:
+        data = request.json or {}
+        token = data.get('token', '')
+        new_password = data.get('new_password', '')
+
+        if not token or not new_password:
+            return jsonify({'error': 'token and new_password are required'}), 400
+
+        error = auth_service.reset_password(token, new_password)
+        if error:
+            return jsonify({'error': error}), 400
+
+        return jsonify({'message': 'Password reset successfully'}), 200
+
+    except Exception as e:
+        logger.error(f"Reset password error: {e}")
+        return jsonify({'error': 'Failed to reset password'}), 500
+
 @app.route('/api/auth/change-password', methods=['POST'])
 @require_auth
 def change_password():

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Login from "./components/auth/Login";
+import ResetPassword from "./components/auth/ResetPassword";
 import PragnaApp from "./pragna/App";
 import { ChatProvider } from "./context/ChatContext";
 
@@ -13,6 +14,19 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState({ username: '', email: '' });
+
+  // The password reset email links to /reset-password?token=... - no router
+  // in this app, so read it directly. Checked once on initial load; the
+  // token is single-use anyway so there's no need for this to react to
+  // later URL changes within the same session.
+  const [resetToken] = useState(() => new URLSearchParams(window.location.search).get('token'));
+
+  const clearResetToken = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('token');
+    window.history.replaceState({}, '', url.pathname + url.search);
+    window.location.reload();
+  };
 
   useEffect(() => {
     // Check if user is already logged in
@@ -47,6 +61,10 @@ export default function App() {
     setUserProfile({ username: '', email: '' });
     setIsAuthenticated(false);
   };
+
+  if (resetToken) {
+    return <ResetPassword token={resetToken} onDone={clearResetToken} />;
+  }
 
   if (loading) {
     return (
