@@ -1,15 +1,39 @@
 import { useState, useEffect, useContext } from 'react'
 import { ChatContext } from '../../context/ChatContext'
 import { changePassword, deleteAccount } from '../../api/api'
+import { SUPPORTED_LANGUAGE_OPTIONS } from '../../utils/language'
 
 const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
   const [activeTab, setActiveTab] = useState('General')
-  const { chatFont, setChatFont, chats, setChats } = useContext(ChatContext)
+  const {
+    chatFont, setChatFont, chats, setChats,
+    chatMode, setChatMode, language, setLanguage,
+    desktopNotifications, setDesktopNotifications,
+  } = useContext(ChatContext)
 
   // Settings States matching mockup
   const [userName, setUserName] = useState(() => userProfile?.username || localStorage.getItem('authUsername') || 'vianan')
   const [nickname, setNickname] = useState(() => localStorage.getItem('pragna_nickname') || '')
   const [instructions, setInstructions] = useState(() => localStorage.getItem('pragna_instructions') || '')
+  const [generalSaved, setGeneralSaved] = useState(false)
+
+  // Preferences drafts - only committed to ChatContext (and localStorage via
+  // its own effects) when "Save changes" is clicked, not on every keystroke/select.
+  const [draftChatFont, setDraftChatFont] = useState(chatFont)
+  const [draftChatMode, setDraftChatMode] = useState(chatMode)
+  const [draftLanguage, setDraftLanguage] = useState(language)
+  const [draftNotifications, setDraftNotifications] = useState(desktopNotifications)
+  const [prefsSaved, setPrefsSaved] = useState(false)
+
+  useEffect(() => {
+    if (!isOpen) return
+    // Re-sync drafts from live context each time the modal opens, so it
+    // doesn't show stale values from a previous open-without-save.
+    setDraftChatFont(chatFont)
+    setDraftChatMode(chatMode)
+    setDraftLanguage(language)
+    setDraftNotifications(desktopNotifications)
+  }, [isOpen])
 
   // Change password
   const [currentPassword, setCurrentPassword] = useState('')
@@ -27,6 +51,44 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
 
   // Clear chat history
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false)
+
+  // Collapse/expand per-section - same localStorage-backed Set pattern used
+  // by the sidebar's folder/recents sections. Danger zone defaults collapsed
+  // (via defaultCollapsed below) so it's out of the way until deliberately opened.
+  const [collapsedSettingsSections, setCollapsedSettingsSections] = useState(() => {
+    const saved = localStorage.getItem('pragna_settings_collapsed')
+    return saved ? new Set(JSON.parse(saved)) : new Set(['danger-zone'])
+  })
+
+  const toggleSettingsSection = (sectionId) => {
+    setCollapsedSettingsSections((prev) => {
+      const next = new Set(prev)
+      if (next.has(sectionId)) next.delete(sectionId)
+      else next.add(sectionId)
+      localStorage.setItem('pragna_settings_collapsed', JSON.stringify([...next]))
+      return next
+    })
+  }
+
+  const SectionToggle = ({ id, title, titleColor }) => {
+    const collapsed = collapsedSettingsSections.has(id)
+    return (
+      <button
+        type="button"
+        onClick={() => toggleSettingsSection(id)}
+        title={collapsed ? 'Expand' : 'Minimize'}
+        style={{ display: 'flex', alignItems: 'center', gap: '7px', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+      >
+        <svg
+          width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"
+          style={{ color: 'var(--pragna-text-muted)', flexShrink: 0, transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.15s ease' }}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: titleColor || 'var(--pragna-text)' }}>{title}</h3>
+      </button>
+    )
+  }
 
   useEffect(() => {
     if (!isOpen) return
@@ -81,6 +143,23 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
       setDeleteError(err.message || 'Failed to delete account.')
       setDeleting(false)
     }
+  }
+
+  const handleSaveGeneral = () => {
+    localStorage.setItem('authUsername', userName)
+    localStorage.setItem('pragna_nickname', nickname)
+    localStorage.setItem('pragna_instructions', instructions)
+    setGeneralSaved(true)
+    setTimeout(() => setGeneralSaved(false), 2500)
+  }
+
+  const handleSavePreferences = () => {
+    setChatFont(draftChatFont)
+    setChatMode(draftChatMode)
+    setLanguage(draftLanguage)
+    setDesktopNotifications(draftNotifications)
+    setPrefsSaved(true)
+    setTimeout(() => setPrefsSaved(false), 2500)
   }
 
   const handleClearHistory = () => {
@@ -161,6 +240,9 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
 
   const tabs = [
     { label: 'General', icon: 'gear' },
+    { label: 'Preferences', icon: 'sun' },
+    { label: 'Account', icon: 'shield' },
+    { label: 'Data', icon: 'download' },
   ]
 
   return (
@@ -253,10 +335,7 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
                 <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', width: '110px', flexShrink: 0 }}>Full name</div>
                 <input
                   value={userName}
-                  onChange={(e) => {
-                    setUserName(e.target.value)
-                    localStorage.setItem('authUsername', e.target.value)
-                  }}
+                  onChange={(e) => setUserName(e.target.value)}
                   style={{ flex: 1, padding: '11px 14px', borderRadius: '10px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '14px' }}
                 />
               </div>
@@ -265,40 +344,52 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
                 <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', width: '110px', flexShrink: 0, paddingTop: '11px' }}>Nickname</div>
                 <input
                   value={nickname}
-                  onChange={(e) => {
-                    setNickname(e.target.value)
-                    localStorage.setItem('pragna_nickname', e.target.value)
-                  }}
+                  onChange={(e) => setNickname(e.target.value)}
                   placeholder="What should Pragna call you?"
                   style={{ flex: 1, padding: '11px 14px', borderRadius: '10px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '14px' }}
                 />
               </div>
 
-              <div style={{ marginBottom: '30px' }}>
-                <div style={{ fontSize: '14px', fontWeight: 650, color: 'var(--pragna-text)', marginBottom: '4px' }}>Instructions for Pragna</div>
-                <p style={{ margin: '0 0 12px 0', fontSize: '12.5px', color: 'var(--pragna-text-muted)' }}>Pragna keeps these in mind across chats.</p>
-                <textarea
-                  value={instructions}
-                  onChange={(e) => {
-                    setInstructions(e.target.value)
-                    localStorage.setItem('pragna_instructions', e.target.value)
-                  }}
-                  placeholder="e.g. I primarily code in Python (not a beginner)"
-                  rows="3"
-                  style={{ width: '100%', resize: 'vertical', padding: '13px 14px', borderRadius: '12px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '14px', lineHeight: 1.5 }}
-                />
+              <div style={{ marginBottom: '10px' }}>
+                <SectionToggle id="instructions" title="Instructions for Pragna" />
+                {!collapsedSettingsSections.has('instructions') && (
+                  <>
+                    <p style={{ margin: '4px 0 12px 0', fontSize: '12.5px', color: 'var(--pragna-text-muted)' }}>Pragna keeps these in mind across chats.</p>
+                    <textarea
+                      value={instructions}
+                      onChange={(e) => setInstructions(e.target.value)}
+                      placeholder="e.g. I primarily code in Python (not a beginner)"
+                      rows="3"
+                      style={{ width: '100%', resize: 'vertical', padding: '13px 14px', borderRadius: '12px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '14px', lineHeight: 1.5 }}
+                    />
+                  </>
+                )}
               </div>
 
-              <div style={{ height: '1px', background: 'var(--pragna-border)', marginBottom: '26px' }}></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '26px' }}>
+                <button
+                  onClick={handleSaveGeneral}
+                  style={{ padding: '10px 22px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold-deep))', color: 'var(--pragna-on-gold)', fontWeight: 650, fontSize: '13.5px', cursor: 'pointer' }}
+                >
+                  Save changes
+                </button>
+                {generalSaved && (
+                  <span style={{ fontSize: '12.5px', color: '#8fd19e' }}>Saved.</span>
+                )}
+              </div>
+            </div>
+          )}
 
-              <h3 style={{ margin: '0 0 18px 0', fontSize: '15px', fontWeight: 700, color: 'var(--pragna-text)' }}>Preferences</h3>
+          {/* PREFERENCES TAB */}
+          {activeTab === 'Preferences' && (
+            <div style={{ animation: 'fadeUp 0.15s ease' }}>
+              <h2 style={{ margin: '0 0 24px 0', fontSize: '20px', fontWeight: 700, color: 'var(--pragna-text)' }}>Preferences</h2>
 
-              {/* Font selection */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', width: '110px', flexShrink: 0 }}>Chat font</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '22px' }}>
+                <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', width: '150px', flexShrink: 0 }}>Chat font</div>
                 <select
-                  value={chatFont}
-                  onChange={(e) => setChatFont(e.target.value)}
+                  value={draftChatFont}
+                  onChange={(e) => setDraftChatFont(e.target.value)}
                   style={{ padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '13.5px', cursor: 'pointer' }}
                 >
                   <option>Default (Segoe UI)</option>
@@ -307,18 +398,92 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
                 </select>
               </div>
 
-              <div style={{ height: '1px', background: 'var(--pragna-border)', margin: '30px 0 26px 0' }}></div>
-
-              <h3 style={{ margin: '0 0 18px 0', fontSize: '15px', fontWeight: 700, color: 'var(--pragna-text)' }}>Account</h3>
-
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '22px' }}>
+                <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', width: '150px', flexShrink: 0 }}>Default chat mode</div>
+                <select
+                  value={draftChatMode}
+                  onChange={(e) => setDraftChatMode(e.target.value)}
+                  style={{ padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '13.5px', cursor: 'pointer' }}
+                >
+                  <option value="general">General</option>
+                  <option value="explain_concepts">Explain</option>
+                  <option value="generate_ideas">Ideas</option>
+                  <option value="write_content">Write</option>
+                  <option value="code_assistance">Code</option>
+                  <option value="ask_questions">Questions</option>
+                  <option value="creative_writing">Story</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '10px' }}>
+                <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', width: '150px', flexShrink: 0 }}>Default response language</div>
+                <select
+                  value={draftLanguage}
+                  onChange={(e) => setDraftLanguage(e.target.value)}
+                  style={{ padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '13.5px', cursor: 'pointer' }}
+                >
+                  {SUPPORTED_LANGUAGE_OPTIONS.map((opt) => (
+                    <option key={opt.code} value={opt.code}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              <p style={{ margin: '0 0 26px 166px', fontSize: '12px', color: 'var(--pragna-text-muted)' }}>
+                Can still be switched per-message from the composer.
+              </p>
+
+              <div style={{ height: '1px', background: 'var(--pragna-border)', marginBottom: '26px' }}></div>
+
+              <SectionToggle id="notifications" title="Notifications" />
+              {!collapsedSettingsSections.has('notifications') && (
+                <>
+                  <p style={{ margin: '4px 0 16px 0', fontSize: '12.5px', color: 'var(--pragna-text-muted)' }}>
+                    Show a desktop notification when a response finishes while this tab is in the background.
+                  </p>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', width: 'fit-content' }}>
+                    <input
+                      type="checkbox"
+                      checked={draftNotifications}
+                      onChange={(e) => setDraftNotifications(e.target.checked)}
+                      style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: 'var(--pragna-gold-soft)' }}
+                    />
+                    <span style={{ fontSize: '13.5px', color: 'var(--pragna-text)' }}>Desktop notifications</span>
+                  </label>
+                  {draftNotifications && typeof Notification !== 'undefined' && Notification.permission === 'denied' && (
+                    <p style={{ margin: '10px 0 0 0', fontSize: '12px', color: '#e8a598' }}>
+                      Notifications are blocked for this site in your browser settings - enable them there for this to work.
+                    </p>
+                  )}
+                </>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '30px' }}>
+                <button
+                  onClick={handleSavePreferences}
+                  style={{ padding: '10px 22px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold-deep))', color: 'var(--pragna-on-gold)', fontWeight: 650, fontSize: '13.5px', cursor: 'pointer' }}
+                >
+                  Save changes
+                </button>
+                {prefsSaved && (
+                  <span style={{ fontSize: '12.5px', color: '#8fd19e' }}>Saved.</span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ACCOUNT TAB */}
+          {activeTab === 'Account' && (
+            <div style={{ animation: 'fadeUp 0.15s ease' }}>
+              <h2 style={{ margin: '0 0 24px 0', fontSize: '20px', fontWeight: 700, color: 'var(--pragna-text)' }}>Account</h2>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '26px' }}>
                 <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', width: '110px', flexShrink: 0 }}>Email</div>
                 <div style={{ fontSize: '14px', color: 'var(--pragna-text)' }}>{userProfile?.email || localStorage.getItem('authEmail') || '—'}</div>
               </div>
 
               <div style={{ marginBottom: '10px' }}>
-                <div style={{ fontSize: '14px', fontWeight: 650, color: 'var(--pragna-text)', marginBottom: '12px' }}>Change password</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '360px' }}>
+                <SectionToggle id="change-password" title="Change password" />
+                {!collapsedSettingsSections.has('change-password') && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '360px', marginTop: '12px' }}>
                   <input
                     type="password"
                     value={currentPassword}
@@ -354,11 +519,63 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
                     {passwordSaving ? 'Updating…' : 'Update password'}
                   </button>
                 </div>
+                )}
               </div>
 
               <div style={{ height: '1px', background: 'var(--pragna-border)', margin: '30px 0 26px 0' }}></div>
 
-              <h3 style={{ margin: '0 0 18px 0', fontSize: '15px', fontWeight: 700, color: 'var(--pragna-text)' }}>Data</h3>
+              <SectionToggle id="danger-zone" title="Danger zone" titleColor="#e8a598" />
+              {!collapsedSettingsSections.has('danger-zone') && (
+                <>
+                  <p style={{ margin: '10px 0 16px 0', fontSize: '12.5px', color: 'var(--pragna-text-muted)' }}>
+                    Permanently deletes your account, all chats, and all personas. This cannot be undone.
+                  </p>
+
+                  {!deleteConfirmOpen ? (
+                    <button
+                      onClick={() => setDeleteConfirmOpen(true)}
+                      style={{ padding: '9px 16px', borderRadius: '10px', border: '1px solid rgba(220,110,100,0.4)', background: 'rgba(180,60,60,0.12)', color: '#e8a598', fontWeight: 650, fontSize: '13px', cursor: 'pointer' }}
+                    >
+                      Delete account
+                    </button>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '360px' }}>
+                      <input
+                        type="password"
+                        value={deletePassword}
+                        onChange={(e) => setDeletePassword(e.target.value)}
+                        placeholder="Enter your password to confirm"
+                        style={{ padding: '11px 14px', borderRadius: '10px', border: '1px solid rgba(220,110,100,0.4)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '14px' }}
+                      />
+                      {deleteError && (
+                        <div style={{ fontSize: '12.5px', color: '#e8a598' }}>{deleteError}</div>
+                      )}
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button
+                          onClick={handleDeleteAccount}
+                          disabled={deleting}
+                          style={{ padding: '9px 16px', borderRadius: '10px', border: 'none', background: '#c0392b', color: '#fff', fontWeight: 650, fontSize: '13px', cursor: deleting ? 'default' : 'pointer', opacity: deleting ? 0.7 : 1 }}
+                        >
+                          {deleting ? 'Deleting…' : 'Permanently delete my account'}
+                        </button>
+                        <button
+                          onClick={() => { setDeleteConfirmOpen(false); setDeletePassword(''); setDeleteError('') }}
+                          style={{ padding: '9px 16px', borderRadius: '10px', border: '1px solid var(--pragna-border)', background: 'transparent', color: 'var(--pragna-text-muted)', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* DATA TAB */}
+          {activeTab === 'Data' && (
+            <div style={{ animation: 'fadeUp 0.15s ease' }}>
+              <h2 style={{ margin: '0 0 24px 0', fontSize: '20px', fontWeight: 700, color: 'var(--pragna-text)' }}>Data</h2>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '16px' }}>
                 <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', width: '110px', flexShrink: 0 }}>Export chats</div>
@@ -399,50 +616,6 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
                   </div>
                 )}
               </div>
-
-              <div style={{ height: '1px', background: 'var(--pragna-border)', margin: '30px 0 26px 0' }}></div>
-
-              <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: 700, color: '#e8a598' }}>Danger zone</h3>
-              <p style={{ margin: '0 0 16px 0', fontSize: '12.5px', color: 'var(--pragna-text-muted)' }}>
-                Permanently deletes your account, all chats, and all personas. This cannot be undone.
-              </p>
-
-              {!deleteConfirmOpen ? (
-                <button
-                  onClick={() => setDeleteConfirmOpen(true)}
-                  style={{ padding: '9px 16px', borderRadius: '10px', border: '1px solid rgba(220,110,100,0.4)', background: 'rgba(180,60,60,0.12)', color: '#e8a598', fontWeight: 650, fontSize: '13px', cursor: 'pointer' }}
-                >
-                  Delete account
-                </button>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '360px' }}>
-                  <input
-                    type="password"
-                    value={deletePassword}
-                    onChange={(e) => setDeletePassword(e.target.value)}
-                    placeholder="Enter your password to confirm"
-                    style={{ padding: '11px 14px', borderRadius: '10px', border: '1px solid rgba(220,110,100,0.4)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '14px' }}
-                  />
-                  {deleteError && (
-                    <div style={{ fontSize: '12.5px', color: '#e8a598' }}>{deleteError}</div>
-                  )}
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button
-                      onClick={handleDeleteAccount}
-                      disabled={deleting}
-                      style={{ padding: '9px 16px', borderRadius: '10px', border: 'none', background: '#c0392b', color: '#fff', fontWeight: 650, fontSize: '13px', cursor: deleting ? 'default' : 'pointer', opacity: deleting ? 0.7 : 1 }}
-                    >
-                      {deleting ? 'Deleting…' : 'Permanently delete my account'}
-                    </button>
-                    <button
-                      onClick={() => { setDeleteConfirmOpen(false); setDeletePassword(''); setDeleteError('') }}
-                      style={{ padding: '9px 16px', borderRadius: '10px', border: '1px solid var(--pragna-border)', background: 'transparent', color: 'var(--pragna-text-muted)', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 

@@ -75,6 +75,18 @@ export function ChatProvider({ children }) {
     return localStorage.getItem("pragna_active_persona_id") || null;
   });
 
+  const [desktopNotifications, setDesktopNotificationsState] = useState(() => {
+    return localStorage.getItem("pragna_desktop_notifications") === "true";
+  });
+
+  const setDesktopNotifications = (enabled) => {
+    if (enabled && typeof Notification !== "undefined" && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+    setDesktopNotificationsState(enabled);
+    localStorage.setItem("pragna_desktop_notifications", String(enabled));
+  };
+
   // Ref to input field for focusing when mode is selected
   const inputRef = useRef(null);
 
@@ -159,6 +171,30 @@ export function ChatProvider({ children }) {
       setActiveChatId(chats[0].id);
     }
   }, []);
+
+  // Fire a desktop notification when a response finishes arriving while the
+  // tab is in the background. wasLoadingRef distinguishes "just finished
+  // loading" from "was never loading" so this doesn't fire on mount.
+  const wasLoadingRef = useRef(false);
+  useEffect(() => {
+    if (
+      wasLoadingRef.current &&
+      !isLoading &&
+      desktopNotifications &&
+      typeof Notification !== "undefined" &&
+      Notification.permission === "granted" &&
+      document.hidden
+    ) {
+      const chat = chats.find((c) => c.id === activeChatId);
+      const lastMessage = chat?.messages?.[chat.messages.length - 1];
+      if (lastMessage && lastMessage.sender === "bot") {
+        new Notification("Pragna-1 A", {
+          body: (lastMessage.text || "New response ready").slice(0, 120),
+        });
+      }
+    }
+    wasLoadingRef.current = isLoading;
+  }, [isLoading]);
 
   const newChat = () => {
     const chat = {
@@ -282,6 +318,8 @@ export function ChatProvider({ children }) {
         refreshPersonas,
         inputRef,
         sidebarSearchInputRef,
+        desktopNotifications,
+        setDesktopNotifications,
       }}
     >
       {children}
