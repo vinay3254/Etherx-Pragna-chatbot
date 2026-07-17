@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
 const SHORTCUTS = [
-  { keys: 'Ctrl/Cmd + K', action: 'Focus chat search' },
+  { keys: 'Ctrl/Cmd + K', action: 'Open command palette' },
   { keys: 'Ctrl/Cmd + Shift + O', action: 'Start a new chat' },
   { keys: 'Ctrl/Cmd + /', action: 'Show this shortcuts panel' },
 ]

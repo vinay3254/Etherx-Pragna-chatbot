@@ -446,7 +446,7 @@ ${turns}
           minHeight: 0,
         }}
       >
-        <div style={{ padding: '0 10px 10px 10px' }}>
+        <div style={{ padding: '0 10px 10px 10px', position: 'relative' }}>
           <input
             ref={sidebarSearchInputRef}
             type="text"
@@ -455,7 +455,7 @@ ${turns}
             placeholder="Search chats..."
             style={{
               width: '100%',
-              padding: '7px 12px',
+              padding: '7px 44px 7px 12px',
               borderRadius: '8px',
               border: '1px solid var(--pragna-border)',
               background: 'var(--pragna-surface-2)',
@@ -464,6 +464,25 @@ ${turns}
             }}
             className="focus-ring"
           />
+          <span
+            title="Open command palette (jump to any chat or run an action)"
+            style={{
+              position: 'absolute',
+              right: '18px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              fontSize: '10.5px',
+              fontFamily: 'monospace',
+              color: 'var(--pragna-text-muted)',
+              background: 'var(--pragna-surface)',
+              border: '1px solid var(--pragna-border)',
+              borderRadius: '5px',
+              padding: '2px 6px',
+              pointerEvents: 'none',
+            }}
+          >
+            ⌘K
+          </span>
         </div>
 
         {/* New Folder */}
