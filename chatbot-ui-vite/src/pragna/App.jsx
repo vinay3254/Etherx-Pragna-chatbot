@@ -6,6 +6,7 @@ import MainLayout from './layouts/MainLayout'
 import HomePage from './pages/HomePage'
 import ImageStudioPage from './pages/ImageStudioPage'
 import GptModesPage from './pages/GptModesPage'
+import ComparePage from './pages/ComparePage'
 import ChatWindow from '../components/chat/ChatWindow'
 import InputBar from '../components/input/InputBar'
 import GlobalDashboard from '../components/dashboard/GlobalDashboard'
@@ -362,6 +363,10 @@ function App({ onLogout, userProfile }) {
           }
         />
       )
+    }
+
+    if (activeView === 'compare') {
+      return <ComparePage />
     }
 
     if (activeView === 'intelligence') {

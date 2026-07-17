@@ -1026,6 +1026,32 @@ def models_catalog():
     })
 
 
+@app.route('/api/compare', methods=['POST'])
+@limiter.limit(config.AI_GENERATION_RATE_LIMIT)
+def compare_models():
+    """Send one prompt to several models in parallel and return each answer independently."""
+    try:
+        data = request.json or {}
+        message = (data.get('message') or '').strip()
+        model_keys = data.get('models') or []
+        language = _normalize_language_code(data.get('language', 'en'))
+
+        if not message:
+            return jsonify({'error': 'message is required'}), 400
+        if not isinstance(model_keys, list) or not model_keys:
+            return jsonify({'error': 'models must be a non-empty list'}), 400
+
+        from services.compare_service import MAX_COMPARE_MODELS, run_compare
+        if len(model_keys) > MAX_COMPARE_MODELS:
+            return jsonify({'error': f'Select at most {MAX_COMPARE_MODELS} models'}), 400
+
+        results = run_compare(message, model_keys, language=language)
+        return jsonify({'status': 'success', 'results': results})
+    except Exception as e:
+        logger.error(f"Compare mode error: {e}")
+        return jsonify({'error': 'Failed to run comparison'}), 500
+
+
 @app.route('/api/share/<token>', methods=['GET'])
 def get_shared_chat(token):
     """Public, read-only fetch of a shared chat by its share token.

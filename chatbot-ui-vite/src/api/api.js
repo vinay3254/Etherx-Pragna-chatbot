@@ -301,6 +301,25 @@ export const getSharedChat = async (token) => {
   return data;
 };
 
+export const runCompare = async ({ message, models, language = "en" }) => {
+  const response = await fetch(`${API_BASE}/api/compare`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      message,
+      models,
+      language: normalizeLanguageCode(language),
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || "Failed to run comparison.");
+  }
+  return data;
+};
+
 export const summarizeChat = async (messages, language) => {
   const response = await fetch(`${API_BASE}/api/summarize_chat`, {
     method: "POST",

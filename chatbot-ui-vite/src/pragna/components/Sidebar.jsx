@@ -296,6 +296,8 @@ ${turns}
         return icon(['M13 2L3 14h9l-1 8 10-12h-9l1-8z'])
       case 'intelligence':
         return icon(['M2 12h20', 'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'], c({ cx: 12, cy: 12, r: 10 }))
+      case 'compare':
+        return icon([], [r({ x: 3, y: 4, width: 8, height: 16, rx: 1.5, key: 'r1' }), r({ x: 13, y: 4, width: 8, height: 16, rx: 1.5, key: 'r2' })])
       case 'agent':
         return icon(['M4 17l6-5-6-5', 'M12 19h8'])
       default:
@@ -332,6 +334,7 @@ ${turns}
     { id: 'images', label: 'Images' },
     { id: 'projects', label: 'Projects' },
     { id: 'gpts', label: 'GPTs' },
+    { id: 'compare', label: 'Compare' },
     { id: 'intelligence', label: 'Intelligence' },
   ]
 
