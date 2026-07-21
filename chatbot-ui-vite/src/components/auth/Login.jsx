@@ -1,11 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import '../../styles/auth.css';
 import { authAPI } from '../../api/authAPI';
 import pragnaLogo from '../../assets/pragna-logo-full.png';
 
+// The animated backdrop used to be a Vanta.js WebGL globe pulled from two
+// CDNs (three.js r128 + vanta.globe) on every mount. That cost ~600KB over a
+// sequential request waterfall, ran a continuous WebGL render loop with
+// mouse/touch listeners, and never cleaned up its injected <script> tags -
+// which is what made typing and navigating the auth flow feel laggy. It's now
+// a pure-CSS gradient drift (see .auth-canvas in auth.css) that animates only
+// transform/opacity, so it stays on the compositor and never blocks input.
+
 export default function Login({ onLoginSuccess }) {
-  const vantaRef = useRef(null);
-  const effectRef = useRef(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -17,54 +23,22 @@ export default function Login({ onLoginSuccess }) {
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
 
-  // Initialize Vanta.js animation
-  useEffect(() => {
-    // Load Vanta.js libraries
-    const script1 = document.createElement('script');
-    script1.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-    document.head.appendChild(script1);
-
-    script1.onload = () => {
-      const script2 = document.createElement('script');
-      script2.src = 'https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.globe.min.js';
-      document.head.appendChild(script2);
-
-      script2.onload = () => {
-        if (window.VANTA && vantaRef.current && !effectRef.current) {
-          effectRef.current = window.VANTA.GLOBE({
-            el: vantaRef.current,
-            mouseControls: true,
-            touchControls: true,
-            gyroControls: false,
-            minHeight: 200.0,
-            minWidth: 200.0,
-            scale: 1.0,
-            scaleMobile: 1.0,
-            color: 0xffd700,
-            backgroundColor: 0x0a0a0a,
-            size: 0.8,
-            xyFrequency: 0.1,
-            zFrequency: 0.05,
-          });
-        }
-      };
-    };
-
-    return () => {
-      if (effectRef.current) {
-        effectRef.current.destroy();
-        effectRef.current = null;
-      }
-    };
-  }, []);
-
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Validate locally first so obvious mistakes surface instantly instead of
+    // costing a network round-trip.
+    const trimmedUsername = username.trim();
+    if (!trimmedUsername || !password) {
+      setError('Enter your username and password.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const data = await authAPI.login(username, password);
+      const data = await authAPI.login(trimmedUsername, password);
 
       if (data.error) {
         setError(data.error || 'Login failed');
@@ -74,7 +48,7 @@ export default function Login({ onLoginSuccess }) {
       // Save token and user info
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('userId', data.user_id);
-      const resolvedUsername = data.username || username;
+      const resolvedUsername = data.username || trimmedUsername;
       const resolvedEmail = data.email || localStorage.getItem('authEmail') || '';
       localStorage.setItem('authUsername', resolvedUsername);
       if (resolvedEmail) {
@@ -85,7 +59,7 @@ export default function Login({ onLoginSuccess }) {
         username: resolvedUsername,
         email: resolvedEmail,
       });
-    } catch (err) {
+    } catch {
       setError('Network error. Try again.');
     } finally {
       setLoading(false);
@@ -95,10 +69,28 @@ export default function Login({ onLoginSuccess }) {
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Mirror the backend's rules client-side so the user gets the feedback
+    // immediately rather than after a failed round-trip.
+    const trimmedUsername = username.trim();
+    const trimmedEmail = email.trim();
+    if (!trimmedUsername || !trimmedEmail || !password) {
+      setError('Fill in every field to create your account.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError('Enter a valid email address.');
+      return;
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const data = await authAPI.register(username, email, password);
+      const data = await authAPI.register(trimmedUsername, trimmedEmail, password);
 
       if (data.error) {
         setError(data.error || 'Registration failed');
@@ -108,8 +100,8 @@ export default function Login({ onLoginSuccess }) {
       // Save token and user info
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('userId', data.user_id);
-      const resolvedUsername = data.username || username;
-      const resolvedEmail = data.email || email;
+      const resolvedUsername = data.username || trimmedUsername;
+      const resolvedEmail = data.email || trimmedEmail;
       localStorage.setItem('authUsername', resolvedUsername);
       if (resolvedEmail) {
         localStorage.setItem('authEmail', resolvedEmail);
@@ -119,7 +111,7 @@ export default function Login({ onLoginSuccess }) {
         username: resolvedUsername,
         email: resolvedEmail,
       });
-    } catch (err) {
+    } catch {
       setError('Network error. Try again.');
     } finally {
       setLoading(false);
@@ -135,7 +127,7 @@ export default function Login({ onLoginSuccess }) {
       // Always show the same success state regardless of whether the email
       // is registered - the backend deliberately never reveals that.
       setResetSent(true);
-    } catch (err) {
+    } catch {
       setError('Network error. Try again.');
     } finally {
       setResetLoading(false);
@@ -151,7 +143,7 @@ export default function Login({ onLoginSuccess }) {
 
   return (
     <div className="auth-container">
-      <div ref={vantaRef} className="vanta-canvas"></div>
+      <div className="auth-canvas" aria-hidden="true"></div>
 
       <div className="auth-header">
         <div className="header-logo-container">
@@ -194,7 +186,7 @@ export default function Login({ onLoginSuccess }) {
                   disabled={resetLoading}
                 />
                 <button type="submit" disabled={resetLoading} className="auth-btn">
-                  {resetLoading ? '...' : 'Send reset link'}
+                  {resetLoading ? 'Sending…' : 'Send reset link'}
                 </button>
               </form>
             )}
@@ -213,13 +205,18 @@ export default function Login({ onLoginSuccess }) {
 
             {error && <div className="auth-error">{error}</div>}
 
-            <form onSubmit={showRegister ? handleRegister : handleLogin}>
+            {/* key forces a fresh form (and re-runs autoFocus) when switching
+                between sign-in and register, so focus lands sensibly instead
+                of staying wherever it was. */}
+            <form key={showRegister ? 'register' : 'login'} onSubmit={showRegister ? handleRegister : handleLogin}>
               <input
                 type="text"
                 placeholder="Username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
+                autoFocus
+                autoComplete="username"
                 disabled={loading}
               />
 
@@ -230,6 +227,7 @@ export default function Login({ onLoginSuccess }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  autoComplete="email"
                   disabled={loading}
                 />
               )}
@@ -240,6 +238,7 @@ export default function Login({ onLoginSuccess }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete={showRegister ? 'new-password' : 'current-password'}
                 disabled={loading}
               />
 
@@ -260,7 +259,9 @@ export default function Login({ onLoginSuccess }) {
               )}
 
               <button type="submit" disabled={loading} className="auth-btn">
-                {loading ? '...' : showRegister ? 'Register' : 'Login'}
+                {loading
+                  ? (showRegister ? 'Creating account…' : 'Signing in…')
+                  : (showRegister ? 'Register' : 'Login')}
               </button>
             </form>
 

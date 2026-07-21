@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Login from "./components/auth/Login";
 import ResetPassword from "./components/auth/ResetPassword";
 import SharedChatView from "./components/chat/SharedChatView";
+import SplashScreen, { SPLASH_TOTAL_MS, SPLASH_FADE_MS } from "./components/SplashScreen";
 import PragnaApp from "./pragna/App";
 import { ChatProvider } from "./context/ChatContext";
 
@@ -32,6 +33,30 @@ export default function App() {
     const match = window.location.pathname.match(/^\/share\/([^/]+)$/);
     return match ? decodeURIComponent(match[1]) : null;
   });
+
+  // Splash plays on every load of the primary app entry - people following a
+  // reset-password or share link land straight on that page rather than
+  // sitting through branding first. App owns the timers (not the SplashScreen
+  // component) so dismissal never depends on a child callback firing.
+  const [showSplash, setShowSplash] = useState(() => {
+    return window.location.pathname !== '/reset-password' && !window.location.pathname.startsWith('/share/');
+  });
+  const [splashVisible, setSplashVisible] = useState(true);
+
+  useEffect(() => {
+    if (!showSplash) return undefined;
+    // Durations come from the SplashScreen frame timeline itself, so App's
+    // dismissal always matches the full Figma sequence length.
+    const fadeTimer = setTimeout(() => setSplashVisible(false), SPLASH_TOTAL_MS - SPLASH_FADE_MS);
+    const removeTimer = setTimeout(() => setShowSplash(false), SPLASH_TOTAL_MS);
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(removeTimer);
+    };
+    // Mount-once: showSplash only ever transitions true -> false, so this
+    // effect's cleanup runs exactly once (on unmount) and never restarts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const clearResetToken = () => {
     const url = new URL(window.location.href);
@@ -82,6 +107,10 @@ export default function App() {
     setIsAuthenticated(false);
   };
 
+  if (showSplash) {
+    return <SplashScreen visible={splashVisible} />;
+  }
+
   if (resetToken || isResetPasswordRoute) {
     return <ResetPassword token={resetToken} onDone={clearResetToken} />;
   }
@@ -90,20 +119,11 @@ export default function App() {
     return <SharedChatView token={shareToken} onDone={goHome} />;
   }
 
+  // Reuse the branded splash as the loading state too - the old placeholder
+  // here was an off-brand blue-grey "Loading..." screen that clashed with the
+  // black/gold identity and caused a visible flash between the two.
   if (loading) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        background: 'linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%)',
-        fontSize: '18px',
-        color: '#ffd700'
-      }}>
-        Loading...
-      </div>
-    );
+    return <SplashScreen visible={true} />;
   }
 
   if (!isAuthenticated) {
