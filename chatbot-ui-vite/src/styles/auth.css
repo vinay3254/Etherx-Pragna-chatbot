@@ -176,23 +176,34 @@
   background: var(--pragna-surface);
   border: 1px solid rgba(212, 175, 55, 0.2);
   border-radius: 12px;
-  padding: 40px;
+  padding: 24px 32px;
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   position: relative;
   z-index: 10;
-  /* No backdrop-filter here: the background above is fully opaque, so a
-     backdrop blur produced no visible effect while still forcing the browser
-     to allocate and re-blur a backdrop layer on every animated frame. */
+}
+
+.auth-logo-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.auth-logo-centered {
+  width: 250px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.35));
 }
 
 .auth-box h1 {
   color: #ffffff;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
   text-align: center;
-  margin-bottom: 25px;
+  margin-bottom: 10px;
   letter-spacing: 0px;
 }
 
@@ -202,7 +213,7 @@
   color: #ff6b6b;
   padding: 12px 15px;
   border-radius: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   font-size: 14px;
   text-align: center;
 }
@@ -210,7 +221,7 @@
 .auth-box form {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
 }
 
 .auth-box input {
